@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Joita Investor Showcase</title>
+  <link rel="stylesheet" href="investor_showcase.css">
+</head>
+<body>
+  <div class="page-shell">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-mark">JT</div>
+        <div class="brand-copy">
+          <strong>Joita</strong>
+          <span>Investor-ready MRV and payout story</span>
+        </div>
+      </div>
+      <div class="top-links">
+        <a href="#story">Workflow</a>
+        <a href="#moat">Trust moat</a>
+        <a href="#assets">Assets</a>
+        <a href="#next">Next steps</a>
+      </div>
+    </div>
+
+    <section class="hero">
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <div class="eyebrow">Offline-first climate finance infrastructure</div>
+          <h1>Trust every farm event before you pay a rupee.</h1>
+          <p>
+            Joita is an offline-first MRV and payout workflow for fragmented Indian farms.
+            It connects field capture, tamper-evident proof, operator verification, and
+            investor-grade audit visibility in one clear system.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="https://www.figma.com/proto/sYGw8DQRc63CpUhegKqDM9/Untitled?node-id=1-1047&t=zWAIeQQVG5A4kce6-1">Open Prototype</a>
+            <a class="button button-secondary" href="#assets">View Investor Assets</a>
+          </div>
+          <div class="meta-row">
+            <span>Offline by default</span>
+            <span>Tamper-evident proof</span>
+            <span>UPI and PSP ready</span>
+            <span>India-first trust controls</span>
+          </div>
+        </div>
+
+        <div class="hero-panel">
+          <div class="panel-chip">Why this wins the room</div>
+          <h2>One complete proof loop, not another climate dashboard.</h2>
+          <p>
+            Investors do not need more abstract claims. They need to see one farmer,
+            one parcel, one verified event, one payout, and one audit trail that all
+            connect cleanly.
+          </p>
+          <div class="panel-grid">
+            <div class="panel-card">
+              <strong>&lt; Rs 830</strong>
+              <span>Target platform spend per farm, using commodity Android hardware and low-cost data sources.</span>
+            </div>
+            <div class="panel-card">
+              <strong>Zero-trust</strong>
+              <span>Live capture, device-side integrity, geofence checks, and audit history protect credit quality.</span>
+            </div>
+            <div class="panel-card">
+              <strong>Field-first</strong>
+              <span>Built for low connectivity and fragmented landholdings instead of office-only workflows.</span>
+            </div>
+            <div class="panel-card">
+              <strong>Investor legible</strong>
+              <span>Heatmaps, drill-downs, and payout state stay tied to proof instead of vanity metrics.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="story">
+      <div class="section-heading">
+        <div class="copy">
+          <div class="pill">Demo workflow</div>
+          <h2>The story investors should experience in under five minutes.</h2>
+          <p>
+            Joita works best when the narrative is simple and tangible. Click through the
+            six-part flow below to show exactly how trust is created, not just claimed.
+          </p>
+        </div>
+      </div>
+
+      <div class="story-grid">
+        <div class="story-panel">
+          <div class="step-buttons">
+            <button class="step-button active" data-step="0">
+              <span class="step-badge">Step 1</span>
+              <strong>Enroll the farmer</strong>
+              <span>Create one trusted record with consent, payout readiness, and language-aware context.</span>
+            </button>
+            <button class="step-button" data-step="1">
+              <span class="step-badge">Step 2</span>
+              <strong>Walk the parcel offline</strong>
+              <span>Capture a boundary under weak connectivity and keep the data safe until sync is possible.</span>
+            </button>
+            <button class="step-button" data-step="2">
+              <span class="step-badge">Step 3</span>
+              <strong>Capture live proof</strong>
+              <span>Use camera-only evidence, metadata extraction, and parcel-aware validation to reduce spoofing.</span>
+            </button>
+            <button class="step-button" data-step="3">
+              <span class="step-badge">Step 4</span>
+              <strong>Verify operations</strong>
+              <span>Let operators review parcel, evidence, and status history in one timeline.</span>
+            </button>
+            <button class="step-button" data-step="4">
+              <span class="step-badge">Step 5</span>
+              <strong>Release payout</strong>
+              <span>Move from approved event to reconciliation-safe payout state without manual spreadsheets.</span>
+            </button>
+            <button class="step-button" data-step="5">
+              <span class="step-badge">Step 6</span>
+              <strong>Open the investor drill-down</strong>
+              <span>Show the map, proof, payout, and audit chain on one polished surface.</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="story-detail">
+          <div class="story-copy">
+            <div class="story-chip" id="story-chip">Hero record</div>
+            <h3 id="story-title">A named farmer anchors the whole system.</h3>
+            <p id="story-body">
+              Joita begins with one clean record: who the farmer is, what parcel is being worked,
+              whether consent is present, and where payout readiness stands. This is how the demo
+              stops being abstract and becomes a real operational chain.
+            </p>
+          </div>
+
+          <div class="story-proof" id="story-proof">
+            <span>Consent status visible</span>
+            <span>Tokenized identity reference</span>
+            <span>Payout method linked</span>
+          </div>
+
+          <div class="story-mock">
+            <div class="mock-shell">
+              <small id="mock-kicker">Hero farmer</small>
+              <strong id="mock-title">Sita Devi / Parcel 14A</strong>
+              <p id="mock-copy">
+                Language preference, tokenized identity, payout status, and parcel readiness are
+                visible before the field workflow moves ahead.
+              </p>
+              <div class="mock-strip" id="mock-strip">
+                <span>Hindi ready</span>
+                <span>Consent signed</span>
+                <span>UPI linked</span>
+              </div>
+            </div>
+            <div class="mini-grid" id="mini-grid">
+              <div class="mini-card">
+                <strong>1 farmer</strong>
+                <span>One memorable hero record for the demo</span>
+              </div>
+              <div class="mini-card">
+                <strong>1 parcel</strong>
+                <span>One parcel stays visible across every step</span>
+              </div>
+              <div class="mini-card">
+                <strong>Ready</strong>
+                <span>Operational chain starts from clarity, not guesswork</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="note-band">
+        <strong>Presentation rule</strong>
+        <p>
+          Do not narrate Joita as "software for carbon." Narrate it as a proof-and-payout
+          engine for field operations. Investors will remember the trust chain and the farmer
+          outcome far more than another climate-tech category slide.
+        </p>
+      </div>
+    </section>
+
+    <section class="section" id="moat">
+      <div class="section-heading">
+        <div class="copy">
+          <div class="pill">Trust moat</div>
+          <h2>What makes Joita defensible and believable.</h2>
+          <p>
+            Each card below should land as a real product advantage, not a buzzword. Together,
+            they create a stronger narrative than any single dashboard screenshot.
+          </p>
+        </div>
+      </div>
+
+      <div class="trust-grid">
+        <div class="trust-card">
+          <div class="trust-icon">01</div>
+          <h3>Offline truth at the edge</h3>
+          <p>Joita assumes weak rural connectivity from the start, so parcel and evidence work do not collapse outside the office.</p>
+        </div>
+        <div class="trust-card">
+          <div class="trust-icon">02</div>
+          <h3>Tamper-evident proof chain</h3>
+          <p>Live capture, metadata extraction, signatures, and append-only events make proof more resilient than basic media upload.</p>
+        </div>
+        <div class="trust-card">
+          <div class="trust-icon">03</div>
+          <h3>Payouts tied to verified events</h3>
+          <p>Money moves only after operational truth exists, which is far more compelling than a standalone field-data app.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-heading">
+        <div class="copy">
+          <div class="pill">India-first execution</div>
+          <h2>The local strategy is part of the product, not a footnote.</h2>
+          <p>
+            Joita should present India-specific readiness as thoughtful architecture: payout rails,
+            data boundaries, and future government-system adapters that do not overcomplicate the MVP.
+          </p>
+        </div>
+      </div>
+
+      <div class="matrix-grid">
+        <div class="matrix-card">
+          <h3>Farmer payout rails</h3>
+          <p>Use PSP-backed UPI and bank workflows so the prototype can move cash credibly without deep banking integration overhead.</p>
+        </div>
+        <div class="matrix-card">
+          <h3>India-resident data boundaries</h3>
+          <p>Keep PII, payout records, and consent artifacts separated from MRV evidence and treated as trust controls from day one.</p>
+        </div>
+        <div class="matrix-card">
+          <h3>Future-ready government hooks</h3>
+          <p>Show adapter points for Farmer Registry or parcel references as roadmap strength, while keeping the MVP sharply scoped.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="assets">
+      <div class="section-heading">
+        <div class="copy">
+          <div class="pill">Investor asset pack</div>
+          <h2>Everything you need to show the story right now.</h2>
+          <p>
+            These are the core assets already in this repo, now organized around a cleaner
+            investor narrative. Use the interactive prototype for clicks, the PDFs for leave-behinds,
+            and the Loom script for the live pitch.
+          </p>
+        </div>
+      </div>
+
+      <div class="asset-grid">
+        <a class="asset-card" href="https://www.figma.com/proto/sYGw8DQRc63CpUhegKqDM9/Untitled?node-id=1-1047&t=zWAIeQQVG5A4kce6-1">
+          <div class="pill">Prototype</div>
+          <h3>Investor click-through</h3>
+          <p>Use this as the live flow during meetings so the product feels real instead of static.</p>
+          <div class="asset-tags">
+            <span>Best for live demos</span>
+            <span>Clickable flow</span>
+          </div>
+        </a>
+
+        <a class="asset-card" href="../ER_Diagram.pdf">
+          <div class="pill">Architecture</div>
+          <h3>Spatial schema and trust chain</h3>
+          <p>Shows how parcel geometry, evidence, and the event chain fit together technically.</p>
+          <div class="asset-tags">
+            <span>Audit story</span>
+            <span>System depth</span>
+          </div>
+        </a>
+
+        <a class="asset-card" href="../The Tech Stack & Cost Optimization Brief.pdf">
+          <div class="pill">Economics</div>
+          <h3>Stack and cost defense</h3>
+          <p>Explains why the architecture stays practical at Indian field scale while keeping unit costs low.</p>
+          <div class="asset-tags">
+            <span>Cost thesis</span>
+            <span>MVP stack</span>
+          </div>
+        </a>
+
+        <a class="asset-card" href="../The India Scale Matrix - FinTech & DPDP.pdf">
+          <div class="pill">Strategy</div>
+          <h3>India-scale matrix</h3>
+          <p>Frames payout rails, privacy posture, and integration hooks as product strategy instead of generic compliance talk.</p>
+          <div class="asset-tags">
+            <span>India-first</span>
+            <span>Trust controls</span>
+          </div>
+        </a>
+
+        <a class="asset-card" href="investor_demo_script.md">
+          <div class="pill">Pitch</div>
+          <h3>Loom and meeting script</h3>
+          <p>Ready-to-read talk track for a 3 to 5 minute walkthrough that stays focused and memorable.</p>
+          <div class="asset-tags">
+            <span>Scripted flow</span>
+            <span>Fast to record</span>
+          </div>
+        </a>
+
+        <a class="asset-card" href="../The Link to your Interactive Prototype.pdf">
+          <div class="pill">Handoff</div>
+          <h3>Prototype link sheet</h3>
+          <p>Provides the design and prototype URLs plus the original recommended click sequence.</p>
+          <div class="asset-tags">
+            <span>Source links</span>
+            <span>Meeting-ready</span>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <section class="section" id="next">
+      <div class="cta-card">
+        <div>
+          <div class="pill">Immediate next moves</div>
+          <h2>To look elite in the room, keep the conversation disciplined.</h2>
+          <p>
+            You already have enough material to present Joita strongly. The difference between
+            "interesting concept" and "investable system" is how cleanly you tell the story.
+          </p>
+          <div class="cta-list">
+            <div class="cta-item">
+              <span>1</span>
+              <div>
+                <strong>Open with the pain</strong>
+                <p>Weak field proof and payout ambiguity break trust long before registry ambition matters.</p>
+              </div>
+            </div>
+            <div class="cta-item">
+              <span>2</span>
+              <div>
+                <strong>Show the six-step proof loop</strong>
+                <p>Use the prototype and this page together so investors see one complete operational chain.</p>
+              </div>
+            </div>
+            <div class="cta-item">
+              <span>3</span>
+              <div>
+                <strong>Close on wedge, not breadth</strong>
+                <p>Position Joita as trusted offline MRV plus payout operations for India, not a universal climate platform.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cta-side">
+          <div class="pill">Ready to record</div>
+          <h3>Record the Loom next.</h3>
+          <p>
+            Use the script in this repo, keep the pace tight, and let the click-through
+            do the heavy lifting. The goal is clarity and confidence, not feature overload.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="investor_demo_script.md">Open Loom Script</a>
+            <a class="button button-secondary" href="https://www.figma.com/design/sYGw8DQRc63CpUhegKqDM9/Untitled?node-id=1-1047&m=dev&t=zWAIeQQVG5A4kce6-1">Open Design File</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer">
+      <div>
+        <strong>Joita</strong><br>
+        Offline-first proof and payout infrastructure for fragmented Indian farms.
+      </div>
+      <div>
+        Showcase file: <strong>deliverable_src/investor_showcase.html</strong><br>
+        Suggested live pairing: prototype + showcase + one PDF leave-behind
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const steps = [
+      {
+        chip: "Hero record",
+        title: "A named farmer anchors the whole system.",
+        body: "Joita begins with one clean record: who the farmer is, what parcel is being worked, whether consent is present, and where payout readiness stands. This is how the demo stops being abstract and becomes a real operational chain.",
+        proof: ["Consent status visible", "Tokenized identity reference", "Payout method linked"],
+        kicker: "Hero farmer",
+        mockTitle: "Sita Devi / Parcel 14A",
+        mockCopy: "Language preference, tokenized identity, payout status, and parcel readiness are visible before the field workflow moves ahead.",
+        strip: ["Hindi ready", "Consent signed", "UPI linked"],
+        cards: [
+          { title: "1 farmer", text: "One memorable hero record for the demo" },
+          { title: "1 parcel", text: "One parcel stays visible across every step" },
+          { title: "Ready", text: "Operational chain starts from clarity, not guesswork" }
+        ]
+      },
+      {
+        chip: "Offline mapping",
+        title: "Parcel truth survives weak connectivity.",
+        body: "The agent walks the boundary on a low-end Android device, the app stores the trace locally, and the workflow makes it obvious that the work is safe even before sync happens. This is where Joita feels built for the field.",
+        proof: ["Offline saved", "Boundary hash generated", "Area confidence tracked"],
+        kicker: "Field capture",
+        mockTitle: "Perimeter walk in progress",
+        mockCopy: "Joita keeps the parcel path on-device until a stable sync window appears, so the demo reads as operationally credible instead of office-only.",
+        strip: ["GPS averaging", "Local checkpoint", "Sync pending"],
+        cards: [
+          { title: "No dead zone panic", text: "Capture continues even when signal does not" },
+          { title: "Area metadata", text: "Parcel quality is treated as part of trust" },
+          { title: "Replay-safe", text: "Idempotent sync prevents duplicate claims" }
+        ]
+      },
+      {
+        chip: "Live evidence",
+        title: "Proof is captured, not uploaded from memory.",
+        body: "The strongest part of Joita's story is that evidence is live, parcel-aware, and integrity-checked. The investor should immediately understand why this is more defensible than a basic photo workflow.",
+        proof: ["Camera-only capture", "Metadata extracted", "Geofence checked"],
+        kicker: "Tamper-evident proof",
+        mockTitle: "Biochar delivery confirmed on-site",
+        mockCopy: "The app records capture time, location, and integrity data before the file leaves the device, making proof feel materially stronger.",
+        strip: ["Live camera", "Hash created", "Inside geofence"],
+        cards: [
+          { title: "Trust > convenience", text: "Gallery upload is intentionally blocked" },
+          { title: "Parcel aware", text: "Evidence belongs to a verified geometry" },
+          { title: "Ready for review", text: "Operators receive context, not just media" }
+        ]
+      },
+      {
+        chip: "Operator truth",
+        title: "Review happens in one auditable timeline.",
+        body: "Operators should see parcel, evidence, status changes, and payout readiness on one calm surface. This is where Joita moves from field app to operational control system.",
+        proof: ["Timeline history", "Reason-coded decisions", "Status confidence"],
+        kicker: "Verification console",
+        mockTitle: "Operator review / Event 2271",
+        mockCopy: "Parcel proof, evidence integrity, and workflow state are visible together so approval feels accountable and explainable.",
+        strip: ["Approved polygon", "Evidence valid", "Ready for payout"],
+        cards: [
+          { title: "One queue", text: "No spreadsheet handoff or fragmented approvals" },
+          { title: "Reason history", text: "Rejects and flags stay legible for follow-up" },
+          { title: "Readable proof", text: "Investors can understand what operators saw" }
+        ]
+      },
+      {
+        chip: "Farmer outcome",
+        title: "Payout state is part of the trust story.",
+        body: "Joita becomes meaningfully differentiated when verified events create a payout path that can be reconciled and reviewed, not just admired in a dashboard.",
+        proof: ["PSP request logged", "Webhook state tracked", "Retry-safe transitions"],
+        kicker: "Payout orchestration",
+        mockTitle: "Payout request released",
+        mockCopy: "Approved field events move into a provider-backed payout workflow with visible IDs, status changes, and operator confidence.",
+        strip: ["Request queued", "Webhook received", "Paid state confirmed"],
+        cards: [
+          { title: "No spreadsheet ops", text: "Status stays inside the product" },
+          { title: "Retry safe", text: "Duplicate money movement is avoided" },
+          { title: "Farmer visible outcome", text: "The story ends with value, not data" }
+        ]
+      },
+      {
+        chip: "Investor drill-down",
+        title: "The dashboard proves where the data came from.",
+        body: "End the meeting with a surface that ties parcel geometry, evidence coverage, payout state, and audit history together. The investor should leave with a sense of coherence and trust, not raw complexity.",
+        proof: ["Parcel heatmap", "Audit drill-down", "Proof-to-payout chain"],
+        kicker: "Investor view",
+        mockTitle: "Parcel 14A / proof chain open",
+        mockCopy: "The investor sees map context, evidence lineage, approval state, and payout confirmation on one polished dashboard.",
+        strip: ["Heatmap active", "Audit trail open", "Paid and verified"],
+        cards: [
+          { title: "Explainable", text: "Every metric points back to proof" },
+          { title: "Memorable", text: "One hero parcel carries the full story" },
+          { title: "Fundable", text: "Operational credibility becomes visible" }
+        ]
+      }
+    ];
+
+    const buttons = [...document.querySelectorAll(".step-button")];
+    const chip = document.getElementById("story-chip");
+    const title = document.getElementById("story-title");
+    const body = document.getElementById("story-body");
+    const proof = document.getElementById("story-proof");
+    const kicker = document.getElementById("mock-kicker");
+    const mockTitle = document.getElementById("mock-title");
+    const mockCopy = document.getElementById("mock-copy");
+    const strip = document.getElementById("mock-strip");
+    const miniGrid = document.getElementById("mini-grid");
+
+    function renderStep(index) {
+      const step = steps[index];
+      buttons.forEach((button, buttonIndex) => {
+        button.classList.toggle("active", buttonIndex === index);
+      });
+
+      chip.textContent = step.chip;
+      title.textContent = step.title;
+      body.textContent = step.body;
+      kicker.textContent = step.kicker;
+      mockTitle.textContent = step.mockTitle;
+      mockCopy.textContent = step.mockCopy;
+
+      proof.innerHTML = step.proof.map((item) => `<span>${item}</span>`).join("");
+      strip.innerHTML = step.strip.map((item) => `<span>${item}</span>`).join("");
+      miniGrid.innerHTML = step.cards.map((card) => `
+        <div class="mini-card">
+          <strong>${card.title}</strong>
+          <span>${card.text}</span>
+        </div>
+      `).join("");
+    }
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        renderStep(Number(button.dataset.step));
+      });
+    });
+
+    renderStep(0);
+  </script>
+</body>
+</html>

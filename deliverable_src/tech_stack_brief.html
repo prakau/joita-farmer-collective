@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>The Tech Stack & Cost Optimization Brief</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    @page { size: A4 landscape; margin: 9mm; }
+    body { padding: 12px 16px; }
+    .header { margin-bottom: 8px; padding-bottom: 6px; }
+    h1 { font-size: 21px; }
+    .subtitle { font-size: 9.5px; margin-bottom: 6px; }
+    .band { padding: 9px; margin-bottom: 8px; }
+    .card { padding: 8px; }
+    h2 { font-size: 15px; margin-bottom: 6px; }
+    p, li, td, th { font-size: 8.7px; line-height: 1.26; }
+    ul { padding-left: 15px; }
+    li { margin-bottom: 3px; }
+    .kpi-grid { margin-top: 5px; gap: 6px; }
+    .kpi { padding: 6px; }
+    .kpi strong { font-size: 12px; margin-bottom: 1px; }
+    .table th, .table td { padding: 5px; }
+    .tight p { margin-bottom: 5px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="eyebrow">Joita-V2</div>
+    <h1>The Tech Stack & Cost Optimization Brief</h1>
+    <p class="subtitle">One-page architecture defense for audit-grade MRV across fragmented Indian farms while keeping platform spend under <strong>$10 / Rs 830</strong> per farm.</p>
+  </div>
+
+  <div class="band">
+    <div class="pill">Recommended Stack</div>
+    <div class="three-col">
+      <div class="card tight">
+        <h2>Edge Layer</h2>
+        <p><strong>React Native</strong> keeps the product Android-first for low-end devices with direct GPS, camera, and background worker access.</p>
+        <p><strong>WatermelonDB + SQLite</strong> is the required offline layer: it stores polygons, evidence manifests, and sync checkpoints on-device until a stable 4G window appears.</p>
+      </div>
+      <div class="card tight">
+        <h2>Core Backend</h2>
+        <p><strong>Supabase + PostgreSQL/PostGIS</strong> remains the source of truth for auth, storage, spatial records, and dashboard read models.</p>
+        <p><strong>Node.js / Edge Functions</strong> handle idempotent ingestion, event projection, evidence validation, and payout-trigger workflows.</p>
+      </div>
+      <div class="card tight">
+        <h2>Spatial + ML</h2>
+        <p><strong>H3 indexing</strong> makes overlap detection and national heatmaps cheap even with millions of micro-landholdings.</p>
+        <p><strong>Sentinel-2 + ISRO Bhuvan APIs</strong> provide low-cost satellite context for tree-growth review and field-edge anomaly checks.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="pill">Why WatermelonDB</div>
+      <ul>
+        <li>Supabase is strong as a hosted backend, but it does not natively solve rural offline sync or replay-safe polygon uploads.</li>
+        <li>WatermelonDB acts as the <strong>edge database</strong> and keeps an append-only local event log in SQLite.</li>
+        <li>A background sync worker uploads only when connectivity, battery, and GPS quality are acceptable.</li>
+        <li>Each event carries an <strong>idempotency key</strong>, so retries cannot create duplicate polygons or duplicate biochar rows.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="pill">Cheap Accuracy</div>
+      <ul>
+        <li>Use guided perimeter walks with multi-sample GPS averaging, corner pauses, and outlier rejection.</li>
+        <li>Store both the raw trace and simplified polygon so auditors can replay how a boundary was captured.</li>
+        <li>Run server-side QA against Sentinel-2 imagery and Bhuvan layers to flag implausible edges or area changes.</li>
+        <li>Use H3 overlap scans before approval to block double counting across adjacent or duplicated claims.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:10px;">
+    <div class="pill">Workflow & Cost Defense</div>
+    <table class="table">
+      <tr>
+        <th>Stage</th>
+        <th>Design Choice</th>
+        <th>Why It Stays Cheap</th>
+      </tr>
+      <tr>
+        <td>Farm mapping</td>
+        <td>React Native + WatermelonDB + GPS averaging</td>
+        <td>No survey-grade hardware; only commodity Android handsets and offline storage.</td>
+      </tr>
+      <tr>
+        <td>Spatial storage</td>
+        <td>PostGIS + H3</td>
+        <td>Open-source geospatial stack instead of proprietary land survey APIs.</td>
+      </tr>
+      <tr>
+        <td>Evidence capture</td>
+        <td>Live camera only + on-device EXIF hashing</td>
+        <td>Prevents gallery spoofing without buying managed hardware.</td>
+      </tr>
+      <tr>
+        <td>Remote QA</td>
+        <td>Sentinel-2 + Bhuvan + rules engine</td>
+        <td>Open or low-cost data supports canopy and land-change checks at scale.</td>
+      </tr>
+      <tr>
+        <td>Cloud</td>
+        <td>AWS or GCP India region</td>
+        <td>Usage-based compute with DPDP-aligned data residency.</td>
+      </tr>
+    </table>
+
+    <div class="kpi-grid">
+      <div class="kpi">
+        <strong>&lt; $10</strong>
+        Target platform cost ceiling per farm.
+      </div>
+      <div class="kpi">
+        <strong>$0</strong>
+        Additional survey hardware required per farm.
+      </div>
+      <div class="kpi">
+        <strong>Open Data</strong>
+        Sentinel-2 and Bhuvan reduce recurring imagery spend.
+      </div>
+      <div class="kpi">
+        <strong>Zero-Trust</strong>
+        Live capture, geofence checks, and chained events protect credit quality.
+      </div>
+    </div>
+  </div>
+
+  <p class="footer-note">Decision summary: keep Supabase as the system of record, but add <strong>WatermelonDB</strong> on-device because Joita's hardest problem is edge sync, not cloud storage.</p>
+</body>
+</html>

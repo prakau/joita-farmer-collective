@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>The India Scale Matrix - FinTech & DPDP</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+  <div class="header">
+    <div class="eyebrow">Joita-V2</div>
+    <h1>The India Scale Matrix - FinTech & DPDP</h1>
+    <p class="subtitle">Localization strategy for farmer payouts, privacy compliance, and government-system interoperability in India.</p>
+  </div>
+
+  <div class="three-col">
+    <div class="card">
+      <div class="pill">FinTech</div>
+      <h2>UPI-Native Payouts</h2>
+      <p>Use a payout service provider such as RazorpayX, Cashfree, or Paytm to route verified carbon proceeds directly into farmer-linked bank accounts or UPI virtual payment addresses.</p>
+    </div>
+    <div class="card">
+      <div class="pill">Privacy</div>
+      <h2>India-Resident Data</h2>
+      <p>Keep personally identifiable farmer data, payout records, and consent ledgers in India-region infrastructure. Spatial analytics can remain in the same region to avoid cross-border ambiguity.</p>
+    </div>
+    <div class="card">
+      <div class="pill">Agristack</div>
+      <h2>Verification Hooks</h2>
+      <p>Build the Joita API layer with adapter points for Farmer Registry, land parcel tokens, and future Digital Agriculture Mission interfaces when they are available by state.</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px;">
+    <div class="pill">1. FinTech Integration</div>
+    <table class="table">
+      <tr>
+        <th>Vector</th>
+        <th>Architecture Choice</th>
+        <th>Investor Outcome</th>
+      </tr>
+      <tr>
+        <td>Payout trigger</td>
+        <td>Release funds only after a <span class="mono">biochar_verified</span> or issuance proceeds event is written to the event store.</td>
+        <td>No manual payout spreadsheets and a full audit trail from verification to cash movement.</td>
+      </tr>
+      <tr>
+        <td>Transfer rail</td>
+        <td>Use PSP payout APIs for UPI and bank transfer rails instead of building direct NPCI connectivity in the prototype.</td>
+        <td>Fast integration with low ops overhead.</td>
+      </tr>
+      <tr>
+        <td>Reconciliation</td>
+        <td>Persist payout request IDs, PSP webhook events, and retry statuses in Joita's ledger.</td>
+        <td>Failed payouts can be retried without duplicate disbursement.</td>
+      </tr>
+      <tr>
+        <td>Identity linkage</td>
+        <td>Map payouts to the farmer profile and verified polygon set, not to agent-entered free text.</td>
+        <td>Reduces payout fraud and improves farmer-level attribution.</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="page-break"></div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="pill">2. DPDP Compliance</div>
+      <h2>Data Minimization & Segregation</h2>
+      <table class="table">
+        <tr>
+          <th>Data Type</th>
+          <th>Storage Strategy</th>
+        </tr>
+        <tr>
+          <td>Aadhaar-linked identity</td>
+          <td>Do not store Aadhaar numbers or even permanent hashes in Joita systems. Store only an <span class="mono">adv_reference_token</span> returned by a certified Aadhaar Data Vault.</td>
+        </tr>
+        <tr>
+          <td>Phone, payout, and consent data</td>
+          <td>Keep in a separate India-resident PII schema with role-based access and retention controls.</td>
+        </tr>
+        <tr>
+          <td>GPS traces and farm polygons</td>
+          <td>Store only MRV-required precision, with raw traces retained for audit windows instead of indefinitely.</td>
+        </tr>
+        <tr>
+          <td>Images</td>
+          <td>Upload compressed derivatives for routine review, but preserve hashes and signed capture manifests for audit integrity.</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="pill">Fraud Control</div>
+      <h2>Zero-Trust On-Device Cryptography</h2>
+      <ul>
+        <li>The app forces <strong>live camera capture</strong> and blocks photo uploads from the gallery.</li>
+        <li>GPS and timestamp EXIF data are extracted <strong>on the phone itself</strong> before the file leaves the device.</li>
+        <li>The app signs the capture manifest with a device-held key and uploads the image hash, EXIF payload, and signature together.</li>
+        <li>The server verifies that the evidence point sits inside the approved farm polygon before it can support a ledger or tree event.</li>
+      </ul>
+      <div class="highlight" style="margin-top:10px;">
+        This closes the spoofing loophole: an agent cannot sit at home, upload an old camera-roll image, and fabricate a valid field event.
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px;">
+    <div class="pill">3. AgriStack Integration</div>
+    <table class="table">
+      <tr>
+        <th>Hook</th>
+        <th>Usage</th>
+        <th>Benefit</th>
+      </tr>
+      <tr>
+        <td>Farmer Registry / Farmer ID</td>
+        <td>Use as a verification input during onboarding and dedupe against existing Joita farmer records.</td>
+        <td>Prevents fake farmer identities and accelerates enrollment.</td>
+      </tr>
+      <tr>
+        <td>Geo-referenced parcel references</td>
+        <td>Pre-fill or cross-check polygon claims against government-backed land references when available.</td>
+        <td>Reduces land ownership disputes and improves auditor confidence.</td>
+      </tr>
+      <tr>
+        <td>State-by-state adapters</td>
+        <td>Abstract Joita's verification service so states with different rollout maturity can plug in without redesigning the core platform.</td>
+        <td>Supports India-scale expansion without locking the prototype to one state's stack.</td>
+      </tr>
+    </table>
+  </div>
+
+  <p class="footer-note">Implementation rule: Joita should keep government identifiers, consent artifacts, and MRV evidence logically separate, then join them through tokens and event references only when a workflow explicitly requires it.</p>
+</body>
+</html>

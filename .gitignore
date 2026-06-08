@@ -1,2 +1,4 @@
+node_modules/
+farmassist-src/node_modules/
 .DS_Store
-.codex/
+*.tsbuildinfo

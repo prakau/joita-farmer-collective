@@ -1,0 +1,691 @@
+package ai.joita.biosoil.ui
+
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
+import android.os.Bundle
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.CameraAlt
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.LocationOn
+import androidx.compose.material.icons.rounded.PictureAsPdf
+import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material.icons.rounded.Usb
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import ai.joita.biosoil.R
+import ai.joita.biosoil.domain.SoilAdvisor
+import ai.joita.biosoil.model.FieldProfile
+import ai.joita.biosoil.model.ParameterStatus
+import ai.joita.biosoil.model.ReadingSource
+import ai.joita.biosoil.model.SoilReading
+import ai.joita.biosoil.model.SoilStatus
+import ai.joita.biosoil.model.SoilTestRecord
+import ai.joita.biosoil.report.ReportService
+import ai.joita.biosoil.sensor.SensorState
+import ai.joita.biosoil.sensor.UsbSoilSensorManager
+import java.io.File
+
+private val SampleReading = SoilReading(
+    moisturePercent = 38.6,
+    temperatureCelsius = 27.4,
+    ecUsCm = 620,
+    ph = 6.8,
+    nitrogenMgKg = 168,
+    phosphorusMgKg = 31,
+    potassiumMgKg = 192,
+    fertilityMgKg = 515,
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun TestWizard(
+    fields: List<FieldProfile>,
+    onBack: () -> Unit,
+    onNeedField: () -> Unit,
+    onSaved: (SoilTestRecord) -> Unit,
+) {
+    val context = LocalContext.current
+    var step by remember { mutableStateOf(0) }
+    var selectedField by remember { mutableStateOf<FieldProfile?>(fields.firstOrNull()) }
+    var source by remember { mutableStateOf<ReadingSource?>(null) }
+    var reading by remember { mutableStateOf<SoilReading?>(null) }
+    var sourceNote by remember { mutableStateOf("") }
+    var location by remember { mutableStateOf<Location?>(null) }
+    var photoUri by remember { mutableStateOf<String?>(null) }
+    var validationMessage by remember { mutableStateOf<Int?>(null) }
+    var sensorState by remember { mutableStateOf<SensorState>(SensorState.NoDevice) }
+    val sensorManager = remember { UsbSoilSensorManager(context) { sensorState = it; if (it is SensorState.Complete) reading = it.reading } }
+    DisposableEffect(Unit) { onDispose(sensorManager::close) }
+
+    val navigateBack: () -> Unit = {
+        validationMessage = null
+        if (step > 0) step-- else onBack()
+        Unit
+    }
+    BackHandler(onBack = navigateBack)
+
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(stringResource(R.string.step_format, step + 1), style = MaterialTheme.typography.bodySmall, color = InkMuted)
+                        Text(stepTitle(step), style = MaterialTheme.typography.titleLarge)
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = navigateBack) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.back_action))
+                    }
+                },
+            )
+        },
+        bottomBar = {
+            Column(
+                modifier = Modifier.fillMaxWidth().imePadding().padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                validationMessage?.let {
+                    Text(stringResource(it), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(bottom = 8.dp))
+                }
+                Button(
+                    onClick = {
+                        validationMessage = null
+                        when (step) {
+                            0 -> when {
+                                selectedField == null -> validationMessage = R.string.no_field_selected
+                                source == null -> validationMessage = R.string.choose_reading_source_error
+                                else -> {
+                                    if (source == ReadingSource.SAMPLE) reading = SampleReading
+                                    step = 1
+                                }
+                            }
+                            1 -> if (reading == null) validationMessage = R.string.complete_reading_error else step = 2
+                            2 -> step = 3
+                            else -> {
+                                val actualReading = reading ?: return@Button
+                                val field = selectedField ?: return@Button
+                                val advisory = SoilAdvisor.assess(actualReading)
+                                onSaved(
+                                    SoilTestRecord(
+                                        fieldId = field.id,
+                                        fieldLabel = "${field.farmerName} — ${field.fieldName}",
+                                        crop = field.crop,
+                                        source = source ?: ReadingSource.MANUAL,
+                                        reading = actualReading,
+                                        score = advisory.score,
+                                        status = advisory.status,
+                                        latitude = location?.latitude,
+                                        longitude = location?.longitude,
+                                        accuracyMeters = location?.accuracy,
+                                        photoUri = photoUri,
+                                        sourceNote = sourceNote,
+                                    ),
+                                )
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                ) { Text(stringResource(if (step == 3) R.string.save_soil_test else R.string.continue_action)) }
+                if (step == 0 && fields.isEmpty()) {
+                    TextButton(onClick = onNeedField) { Text(stringResource(R.string.add_first_field)) }
+                }
+            }
+        },
+    ) { padding ->
+        when (step) {
+            0 -> SourceStep(fields, selectedField, { selectedField = it }, source, { source = it }, padding)
+            1 -> ReadingStep(
+                source = source ?: ReadingSource.MANUAL,
+                reading = reading,
+                sourceNote = sourceNote,
+                onSourceNote = { sourceNote = it },
+                onReading = { reading = it },
+                sensorState = sensorState,
+                onSensorAction = {
+                    when (val state = sensorState) {
+                        is SensorState.PermissionRequired -> sensorManager.requestPermission(state.device)
+                        else -> sensorManager.connect()
+                    }
+                },
+                padding = padding,
+            )
+            2 -> EvidenceStep(location, { location = it }, photoUri, { photoUri = it }, padding)
+            else -> ReviewStep(selectedField, source, reading, sourceNote, location, photoUri, padding)
+        }
+    }
+}
+
+@Composable
+private fun SourceStep(
+    fields: List<FieldProfile>,
+    selected: FieldProfile?,
+    onField: (FieldProfile) -> Unit,
+    source: ReadingSource?,
+    onSource: (ReadingSource) -> Unit,
+    padding: PaddingValues,
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(padding),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        item { Text(stringResource(R.string.select_field), style = MaterialTheme.typography.titleLarge) }
+        if (fields.isEmpty()) {
+            item { Text(stringResource(R.string.no_fields_body), color = InkMuted) }
+        } else {
+            items(fields.size) { index ->
+                val field = fields[index]
+                Card(
+                    modifier = Modifier.fillMaxWidth().selectable(selected == field, onClick = { onField(field) }),
+                    colors = CardDefaults.cardColors(containerColor = if (selected == field) LeafLight else MaterialTheme.colorScheme.surface),
+                ) {
+                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(selected == field, onClick = { onField(field) })
+                        Column(Modifier.padding(start = 8.dp)) {
+                            Text(field.fieldName, fontWeight = FontWeight.SemiBold)
+                            Text("${field.farmerName} • ${field.village} • ${field.crop}", color = InkMuted)
+                        }
+                    }
+                }
+            }
+        }
+        item {
+            Spacer(Modifier.height(8.dp))
+            Text(stringResource(R.string.select_source), style = MaterialTheme.typography.titleLarge)
+        }
+        item { SourceOption(ReadingSource.USB, R.string.connect_usb_sensor, R.string.connect_usb_sensor_body, source, onSource, Icons.Rounded.Usb) }
+        item { SourceOption(ReadingSource.MANUAL, R.string.enter_manually, R.string.enter_manually_body, source, onSource, Icons.Rounded.CheckCircle) }
+        item { SourceOption(ReadingSource.SAMPLE, R.string.try_sample_reading, R.string.try_sample_reading_body, source, onSource, Icons.Rounded.CheckCircle) }
+    }
+}
+
+@Composable
+private fun SourceOption(
+    option: ReadingSource,
+    title: Int,
+    body: Int,
+    selected: ReadingSource?,
+    onSelect: (ReadingSource) -> Unit,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth().selectable(selected == option, onClick = { onSelect(option) }),
+        colors = CardDefaults.cardColors(containerColor = if (selected == option) LeafLight else MaterialTheme.colorScheme.surface),
+    ) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, contentDescription = null, tint = JoitaGreen, modifier = Modifier.size(28.dp))
+            Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                Text(stringResource(title), fontWeight = FontWeight.SemiBold)
+                Text(stringResource(body), color = InkMuted)
+            }
+            RadioButton(selected == option, onClick = { onSelect(option) })
+        }
+    }
+}
+
+@Composable
+private fun ReadingStep(
+    source: ReadingSource,
+    reading: SoilReading?,
+    sourceNote: String,
+    onSourceNote: (String) -> Unit,
+    onReading: (SoilReading) -> Unit,
+    sensorState: SensorState,
+    onSensorAction: () -> Unit,
+    padding: PaddingValues,
+) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        SourceBadge(source)
+        when (source) {
+            ReadingSource.MANUAL -> ManualReadingForm(sourceNote, onSourceNote, onReading)
+            ReadingSource.SAMPLE -> {
+                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFFE2A8))) {
+                    Text(stringResource(R.string.sample_warning), modifier = Modifier.padding(16.dp), fontWeight = FontWeight.SemiBold)
+                }
+                MetricGrid(SampleReading)
+            }
+            ReadingSource.USB -> {
+                Text(sensorStateText(sensorState), color = if (sensorState is SensorState.Error) MaterialTheme.colorScheme.error else InkMuted)
+                Button(onClick = onSensorAction, modifier = Modifier.fillMaxWidth().height(52.dp)) {
+                    Text(
+                        stringResource(
+                            if (sensorState is SensorState.PermissionRequired) R.string.allow_usb_access else R.string.take_reading,
+                        ),
+                    )
+                }
+                if (reading == null) {
+                    Text(stringResource(R.string.values_waiting), color = InkMuted)
+                } else MetricGrid(reading)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ManualReadingForm(sourceNote: String, onSourceNote: (String) -> Unit, onReading: (SoilReading) -> Unit) {
+    var moisture by remember { mutableStateOf("") }
+    var temperature by remember { mutableStateOf("") }
+    var ec by remember { mutableStateOf("") }
+    var ph by remember { mutableStateOf("") }
+    var nitrogen by remember { mutableStateOf("") }
+    var phosphorus by remember { mutableStateOf("") }
+    var potassium by remember { mutableStateOf("") }
+    var fertility by remember { mutableStateOf("") }
+
+    LaunchedEffect(moisture, temperature, ec, ph, nitrogen, phosphorus, potassium, fertility) {
+        val values = listOf(
+            moisture.toDoubleOrNull(), temperature.toDoubleOrNull(), ec.toIntOrNull(), ph.toDoubleOrNull(),
+            nitrogen.toIntOrNull(), phosphorus.toIntOrNull(), potassium.toIntOrNull(), fertility.toIntOrNull(),
+        )
+        if (values.all { it != null }) {
+            onReading(
+                SoilReading(
+                    moisture.toDouble(), temperature.toDouble(), ec.toInt(), ph.toDouble(),
+                    nitrogen.toInt(), phosphorus.toInt(), potassium.toInt(), fertility.toInt(),
+                ),
+            )
+        }
+    }
+
+    NumberField(moisture, { moisture = it }, R.string.metric_moisture, R.string.unit_percent)
+    NumberField(temperature, { temperature = it }, R.string.metric_temperature, R.string.unit_celsius)
+    NumberField(ec, { ec = it }, R.string.metric_ec, R.string.unit_ec)
+    NumberField(ph, { ph = it }, R.string.metric_ph, null)
+    NumberField(nitrogen, { nitrogen = it }, R.string.metric_nitrogen, R.string.unit_mgkg)
+    NumberField(phosphorus, { phosphorus = it }, R.string.metric_phosphorus, R.string.unit_mgkg)
+    NumberField(potassium, { potassium = it }, R.string.metric_potassium, R.string.unit_mgkg)
+    NumberField(fertility, { fertility = it }, R.string.metric_fertility, R.string.unit_mgkg)
+    OutlinedTextField(
+        value = sourceNote,
+        onValueChange = onSourceNote,
+        label = { Text(stringResource(R.string.manual_source_note)) },
+        placeholder = { Text(stringResource(R.string.manual_source_hint)) },
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
+@Composable
+private fun NumberField(value: String, onValue: (String) -> Unit, label: Int, unit: Int?) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValue,
+        label = { Text(stringResource(label)) },
+        suffix = unit?.let { { Text(stringResource(it)) } },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
+@Composable
+private fun EvidenceStep(
+    location: Location?,
+    onLocation: (Location) -> Unit,
+    photoUri: String?,
+    onPhoto: (String) -> Unit,
+    padding: PaddingValues,
+) {
+    val context = LocalContext.current
+    var pendingPhotoUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        if (success) pendingPhotoUri?.toString()?.let(onPhoto)
+    }
+    val locationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+        if (result[Manifest.permission.ACCESS_FINE_LOCATION] == true || result[Manifest.permission.ACCESS_COARSE_LOCATION] == true) {
+            captureLocation(context, onLocation)
+        }
+    }
+    Column(
+        modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Text(stringResource(R.string.capture_evidence), style = MaterialTheme.typography.headlineMedium)
+        Card {
+            Column(Modifier.padding(16.dp)) {
+                Icon(Icons.Rounded.LocationOn, contentDescription = null, tint = InfoBlue)
+                Text(stringResource(R.string.capture_location), style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(R.string.location_permission_body), color = InkMuted)
+                location?.let {
+                    Spacer(Modifier.height(8.dp))
+                    Text("${"%.5f".format(it.latitude)}, ${"%.5f".format(it.longitude)}")
+                    Text(stringResource(R.string.accuracy_format, it.accuracy), color = InkMuted)
+                }
+                Spacer(Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = {
+                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                        ) captureLocation(context, onLocation)
+                        else locationLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                    },
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                ) { Text(stringResource(R.string.capture_location)) }
+            }
+        }
+        Card {
+            Column(Modifier.padding(16.dp)) {
+                Icon(Icons.Rounded.CameraAlt, contentDescription = null, tint = JoitaGreen)
+                Text(stringResource(R.string.capture_photo), style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(R.string.photo_permission_body), color = InkMuted)
+                if (photoUri != null) Text(stringResource(R.string.photo_captured), color = JoitaGreenDark, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = {
+                        val directory = File(context.filesDir, "photos").apply { mkdirs() }
+                        val file = File(directory, "soil-${System.currentTimeMillis()}.jpg")
+                        val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
+                        pendingPhotoUri = uri
+                        cameraLauncher.launch(uri)
+                    },
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                ) { Text(stringResource(R.string.capture_photo)) }
+            }
+        }
+        Text(stringResource(R.string.evidence_optional), color = InkMuted)
+    }
+}
+
+@Composable
+private fun ReviewStep(
+    field: FieldProfile?,
+    source: ReadingSource?,
+    reading: SoilReading?,
+    sourceNote: String,
+    location: Location?,
+    photoUri: String?,
+    padding: PaddingValues,
+) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Text(stringResource(R.string.review_test), style = MaterialTheme.typography.headlineMedium)
+        if (source != null) SourceBadge(source)
+        Card {
+            Column(Modifier.padding(16.dp)) {
+                Text(stringResource(R.string.field_context), style = MaterialTheme.typography.titleLarge)
+                Text(field?.let { "${it.farmerName} — ${it.fieldName}" } ?: "—")
+                Text(field?.let { "${it.village}, ${it.district}, ${it.state} • ${it.crop}" } ?: "—", color = InkMuted)
+                if (sourceNote.isNotBlank()) Text(sourceNote, color = InkMuted)
+            }
+        }
+        Card {
+            Column(Modifier.padding(16.dp)) {
+                Text(stringResource(R.string.observed_values), style = MaterialTheme.typography.titleLarge)
+                if (reading != null) MetricGrid(reading) else Text("—")
+            }
+        }
+        Card {
+            Column(Modifier.padding(16.dp)) {
+                Text(stringResource(R.string.missing_evidence), style = MaterialTheme.typography.titleLarge)
+                if (location == null) Text("• ${stringResource(R.string.location_not_captured)}")
+                if (photoUri == null) Text("• ${stringResource(R.string.photo_not_captured)}")
+                if (location != null && photoUri != null) Text(stringResource(R.string.evidence_complete), color = JoitaGreenDark)
+            }
+        }
+        Text(stringResource(R.string.advisory_disclaimer), color = SoilBrown, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun ResultScreen(test: SoilTestRecord, onBack: () -> Unit) {
+    val context = LocalContext.current
+    val advisory = remember(test) { SoilAdvisor.assess(test.reading) }
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.soil_result)) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.back_action))
+                    }
+                },
+            )
+        },
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(padding),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            item {
+                Card(colors = CardDefaults.cardColors(containerColor = LeafLight), shape = MaterialTheme.shapes.extraLarge) {
+                    Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(stringResource(R.string.advisory_label), color = JoitaGreenDark)
+                        Text("${test.score}/100", style = MaterialTheme.typography.headlineMedium, color = JoitaGreenDark)
+                        Text(statusLabel(test.status), style = MaterialTheme.typography.titleLarge, color = JoitaGreenDark)
+                        Spacer(Modifier.height(8.dp))
+                        SourceBadge(test.source)
+                    }
+                }
+            }
+            item {
+                Text(stringResource(R.string.observed_values), style = MaterialTheme.typography.titleLarge)
+                MetricGrid(test.reading)
+            }
+            item {
+                Card {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(stringResource(R.string.what_this_means), style = MaterialTheme.typography.titleLarge)
+                        advisory.assessments.forEach { assessment ->
+                            val status = when (assessment.status) {
+                                ParameterStatus.GOOD -> stringResource(R.string.status_good)
+                                ParameterStatus.LOW -> stringResource(R.string.status_low)
+                                ParameterStatus.HIGH -> stringResource(R.string.status_high)
+                            }
+                            Text("${assessmentLabel(assessment.key)}: ${assessment.value} — $status")
+                        }
+                    }
+                }
+            }
+            item {
+                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFFE2A8))) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(stringResource(R.string.next_field_action), style = MaterialTheme.typography.titleLarge)
+                        advisory.immediateActions.forEach { Text("• ${adviceLabel(it)}") }
+                        Text("• ${stringResource(R.string.advice_retest)}")
+                        Text("• ${stringResource(R.string.advice_lab)}")
+                    }
+                }
+            }
+            item {
+                Text(stringResource(R.string.advisory_disclaimer), color = SoilBrown, fontWeight = FontWeight.SemiBold)
+            }
+            item {
+                Button(
+                    onClick = { ReportService.sharePdf(context, ReportService.createPdf(context, test)) },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                ) {
+                    Icon(Icons.Rounded.Share, contentDescription = null)
+                    Spacer(Modifier.size(8.dp))
+                    Text(stringResource(R.string.share_report))
+                }
+            }
+            item {
+                OutlinedButton(
+                    onClick = { ReportService.sharePdf(context, ReportService.createPdf(context, test)) },
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                ) {
+                    Icon(Icons.Rounded.PictureAsPdf, contentDescription = null)
+                    Spacer(Modifier.size(8.dp))
+                    Text(stringResource(R.string.save_pdf))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MetricGrid(reading: SoilReading) {
+    val metrics = listOf(
+        stringResource(R.string.metric_moisture) to "${reading.moisturePercent} %",
+        stringResource(R.string.metric_temperature) to "${reading.temperatureCelsius} °C",
+        stringResource(R.string.metric_ec) to "${reading.ecUsCm} µS/cm",
+        stringResource(R.string.metric_ph) to reading.ph.toString(),
+        stringResource(R.string.metric_nitrogen) to "${reading.nitrogenMgKg} mg/kg",
+        stringResource(R.string.metric_phosphorus) to "${reading.phosphorusMgKg} mg/kg",
+        stringResource(R.string.metric_potassium) to "${reading.potassiumMgKg} mg/kg",
+        stringResource(R.string.metric_fertility) to "${reading.fertilityMgKg} mg/kg",
+    )
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val columns = if (maxWidth >= 360.dp) 2 else 1
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            metrics.chunked(columns).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEach { (label, value) ->
+                        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant), modifier = Modifier.weight(1f)) {
+                            Column(Modifier.padding(12.dp)) {
+                                Text(label, style = MaterialTheme.typography.bodySmall, color = InkMuted)
+                                Text(value, fontWeight = FontWeight.SemiBold)
+                            }
+                        }
+                    }
+                    if (row.size < columns) Spacer(Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun stepTitle(step: Int) = stringResource(
+    when (step) {
+        0 -> R.string.select_source
+        1 -> R.string.take_reading
+        2 -> R.string.capture_evidence
+        else -> R.string.review_test
+    },
+)
+
+@Composable
+private fun sensorStateText(state: SensorState) = stringResource(
+    when (state) {
+        SensorState.Unsupported -> R.string.usb_unsupported
+        SensorState.NoDevice -> R.string.usb_no_device
+        is SensorState.PermissionRequired -> R.string.usb_permission_needed
+        SensorState.Connecting -> R.string.usb_connecting
+        SensorState.Connected -> R.string.sensor_connected
+        SensorState.Reading -> R.string.usb_reading
+        is SensorState.Complete -> R.string.reading_complete
+        is SensorState.Error -> R.string.usb_error
+    },
+)
+
+@Composable
+private fun statusLabel(status: SoilStatus) = stringResource(
+    when (status) {
+        SoilStatus.GOOD -> R.string.status_good
+        SoilStatus.NEEDS_ATTENTION -> R.string.status_attention
+        SoilStatus.URGENT -> R.string.status_urgent
+    },
+)
+
+@Composable
+private fun assessmentLabel(key: String) = stringResource(
+    when (key) {
+        "moisture" -> R.string.metric_moisture
+        "temperature" -> R.string.metric_temperature
+        "ec" -> R.string.metric_ec
+        "ph" -> R.string.metric_ph
+        "nitrogen" -> R.string.metric_nitrogen
+        "phosphorus" -> R.string.metric_phosphorus
+        "potassium" -> R.string.metric_potassium
+        else -> R.string.metric_fertility
+    },
+)
+
+@Composable
+private fun adviceLabel(key: String) = stringResource(
+    when (key) {
+        "irrigate" -> R.string.advice_irrigate
+        "improve_drainage" -> R.string.advice_drainage
+        "confirm_ph" -> R.string.advice_confirm_ph
+        "nutrient_plan" -> R.string.advice_nutrient_plan
+        else -> R.string.advice_maintain
+    },
+)
+
+@Suppress("MissingPermission")
+private fun captureLocation(context: Context, onLocation: (Location) -> Unit) {
+    val manager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+    val providers = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)
+        .filter { runCatching { manager.isProviderEnabled(it) }.getOrDefault(false) }
+    providers.mapNotNull { runCatching { manager.getLastKnownLocation(it) }.getOrNull() }
+        .maxByOrNull(Location::getTime)
+        ?.let(onLocation)
+    val provider = providers.firstOrNull() ?: return
+    val listener = object : LocationListener {
+        override fun onLocationChanged(location: Location) {
+            onLocation(location)
+            manager.removeUpdates(this)
+        }
+        @Deprecated("Deprecated in Android")
+        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) = Unit
+        override fun onProviderEnabled(provider: String) = Unit
+        override fun onProviderDisabled(provider: String) = Unit
+    }
+    manager.requestSingleUpdate(provider, listener, null)
+}

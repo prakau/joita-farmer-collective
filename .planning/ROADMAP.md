@@ -127,6 +127,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 4. Evidence Integrity and Audit Chain | 0/3 | Not started | - |
 | 5. Operator Verification and Payout Ops | 0/3 | Not started | - |
 | 6. Investor Reporting and Trust Controls | 0/2 | Not started | - |
+| 7. JOITA BioSeed AI Soil Saathi Android app | 3/3 | Built — physical UAT pending | 2026-08-11 |
 
 ### Phase 7: Rebuild SoilDetector as JOITA BIOSEED AI bilingual Android app
 
@@ -143,6 +144,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
   4. The new UI follows the JOITA logo-derived India-first visual system with large touch targets and clear status feedback.
 
 Plans:
-- [ ] 07-01: Bootstrap Android foundation, offline domain storage, recovered USB protocol and unit tests
-- [ ] 07-02: Build the complete English/Hindi JOITA field interface, mobile integrations and offline reports
-- [ ] 07-03: Generate JOITA release signing, build APK/AAB, verify and document handoff
+- [x] 07-01: Bootstrap Android foundation, offline domain storage, recovered USB protocol and unit tests
+- [x] 07-02: Build the complete English/Hindi JOITA field interface, mobile integrations and offline reports
+- [x] 07-03: Generate JOITA release signing, build APK/AAB, verify and document handoff

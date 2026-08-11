@@ -127,3 +127,20 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 4. Evidence Integrity and Audit Chain | 0/3 | Not started | - |
 | 5. Operator Verification and Payout Ops | 0/3 | Not started | - |
 | 6. Investor Reporting and Trust Controls | 0/2 | Not started | - |
+
+### Phase 7: Rebuild SoilDetector as JOITA BIOSEED AI bilingual Android app
+
+**Goal:** Deliver a signed, installable, offline-first Android app named JOITA BioSeed AI – Soil Saathi with a completely new accessible interface, English/Hindi localization, India-specific soil workflows, and explicit camera/GPS/share integrations.
+**Requirements**: TBD
+**Depends on:** Phase 6
+**Plans:** 0 plans
+
+**UI hint**: yes
+**Success Criteria** (what must be TRUE):
+  1. A signed APK installs and launches on supported Android devices while the supplied reference APK remains unchanged.
+  2. Users can switch between English and Hindi and complete farmer, field, soil observation, recommendation, history, and report workflows offline.
+  3. USB-OTG soil probe, camera, GPS, phone/WhatsApp, connectivity, and sharing integrations are explicit, permission-safe, and degrade gracefully to manual/offline paths.
+  4. The new UI follows the JOITA logo-derived India-first visual system with large touch targets and clear status feedback.
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 7 to break down)

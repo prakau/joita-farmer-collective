@@ -52,6 +52,10 @@ None yet.
 - Exact mobile bootstrap path for native modules and offline tooling needs confirmation during Phase 1 planning
 - Legal review is still required before claiming production-grade compliance externally
 
+### Roadmap Evolution
+
+- Phase 7 added: Rebuild SoilDetector as JOITA BIOSEED AI bilingual Android app
+
 ### Quick Tasks Completed
 
 | # | Description | Date | Commit | Directory |

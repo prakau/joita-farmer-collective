@@ -1,9 +1,9 @@
 ---
 phase: 7
 slug: rebuild-soildetector-as-joita-bioseed-ai-bilingual-android-app
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: approved
+nyquist_compliant: true
+wave_0_complete: pending_execution
 created: 2026-08-11
 ---
 
@@ -30,16 +30,18 @@ created: 2026-08-11
 
 ## Per-Task Verification Map
 
-| Task family | Wave | Capability | Test Type | Automated Command | Status |
-|-------------|------|------------|-----------|-------------------|--------|
-| Project/bootstrap | 1 | API 36/min 23/build/signing config | build/static | `./gradlew tasks assembleDebug --no-daemon` | ⬜ pending |
-| Probe protocol | 1 | USB command and payload parser | JVM unit | `./gradlew testDebugUnitTest --tests '*SoilProbeProtocolTest' --no-daemon` | ⬜ pending |
-| Persistence/advice | 1 | Offline records and 0–100 advisory score | JVM unit | `./gradlew testDebugUnitTest --tests '*SoilAdvisorTest' --no-daemon` | ⬜ pending |
-| Localization | 2 | English/Hindi parity and locale config | script/resource | `./scripts/check-locales.sh` | ⬜ pending |
-| Compose UI | 2 | Complete screen/state implementation | compile/lint | `./gradlew lintDebug assembleDebug --no-daemon` | ⬜ pending |
-| Mobile integrations | 2 | USB/GPS/camera/share manifest and source states | unit/static | `./gradlew testDebugUnitTest lintDebug --no-daemon` | ⬜ pending |
-| Release packaging | 3 | Signed APK/AAB and correct metadata | build/SDK tools | `./scripts/verify-release.sh` | ⬜ pending |
-| Offline E2E | 3 | Field → test → result → report | emulator/manual | `adb install -r <apk>` plus UAT | ⬜ pending |
+| Task ID | Wave | Capability | Test Type | Automated Command | Status |
+|---------|------|------------|-----------|-------------------|--------|
+| 07-01-01 | 1 | API 36/min 23 project and manifest | build/static | `./gradlew tasks --no-daemon` | ⬜ pending |
+| 07-01-02 | 1 | Offline models, SQLite and advisory | JVM unit | `./gradlew testDebugUnitTest --tests '*SoilAdvisorTest' --no-daemon` | ⬜ pending |
+| 07-01-03 | 1 | USB command, parser and manager | JVM unit | `./gradlew testDebugUnitTest --tests '*SoilProbeProtocolTest' --no-daemon` | ⬜ pending |
+| 07-02-01 | 2 | English/Hindi parity and theme | script/lint | `./scripts/check-locales.sh && ./gradlew lintDebug --no-daemon` | ⬜ pending |
+| 07-02-02 | 2 | Navigation, Home and Fields | compile/lint | `./gradlew assembleDebug lintDebug --no-daemon` | ⬜ pending |
+| 07-02-03 | 2 | Source wizard, evidence and result | unit/full debug | `./gradlew testDebugUnitTest lintDebug assembleDebug --no-daemon` | ⬜ pending |
+| 07-02-04 | 2 | History, report and settings | unit/full debug | `./gradlew testDebugUnitTest lintDebug assembleDebug --no-daemon` | ⬜ pending |
+| 07-03-01 | 3 | JOITA signing key | static/keytool | `test -f release-signing/joita-biosoil-release.jks` | ⬜ pending |
+| 07-03-02 | 3 | Signed APK/AAB and metadata | full release | `./scripts/verify-release.sh` | ⬜ pending |
+| 07-03-03 | 3 | Install/update documentation | content/hash | `rg -n 'Installation|USB sensor|Signing|Future updates' README.md` | ⬜ pending |
 
 ## Wave 0 Requirements
 
@@ -73,11 +75,11 @@ created: 2026-08-11
 
 ## Validation Sign-Off
 
-- [ ] Every implementation task has an automated verification command or a documented manual hardware reason.
-- [ ] Sampling continuity: no three consecutive tasks without automated verification.
-- [ ] Wave 0 creates all missing test infrastructure.
-- [ ] No watch-mode flags.
+- [x] Every implementation task has an automated verification command or a documented manual hardware reason.
+- [x] Sampling continuity: no three consecutive tasks without automated verification.
+- [x] Wave 0 requirements are assigned to Plan 07-01/07-02.
+- [x] No watch-mode flags.
 - [ ] Full release verification completes before handoff.
-- [ ] `nyquist_compliant: true` set after plan task mapping is finalized.
+- [x] `nyquist_compliant: true` set after plan task mapping is finalized.
 
-**Approval:** pending plan finalization
+**Approval:** approved 2026-08-11

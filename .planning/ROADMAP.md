@@ -133,7 +133,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 **Goal:** Deliver a signed, installable, offline-first Android app named JOITA BioSeed AI – Soil Saathi with a completely new accessible interface, English/Hindi localization, India-specific soil workflows, and explicit camera/GPS/share integrations.
 **Requirements**: TBD
 **Depends on:** Phase 6
-**Plans:** 0 plans
+**Plans:** 3 plans
 
 **UI hint**: yes
 **Success Criteria** (what must be TRUE):
@@ -143,4 +143,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
   4. The new UI follows the JOITA logo-derived India-first visual system with large touch targets and clear status feedback.
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 7 to break down)
+- [ ] 07-01: Bootstrap Android foundation, offline domain storage, recovered USB protocol and unit tests
+- [ ] 07-02: Build the complete English/Hindi JOITA field interface, mobile integrations and offline reports
+- [ ] 07-03: Generate JOITA release signing, build APK/AAB, verify and document handoff

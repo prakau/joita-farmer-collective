@@ -1,0 +1,14 @@
+JOITA BIOSEED AI - SOIL SAATHI 4.0.0
+
+ANDROID INSTALLATION
+
+1. Copy JOITA-BioSeed-AI-Soil-Saathi-4.0.0.apk to the Android phone.
+2. Open the file from Files, WhatsApp, email or another trusted transfer app.
+3. If Android asks, allow that transfer app to install unknown apps.
+4. Tap Install, then open “JOITA BioSeed AI – Soil Saathi”.
+5. Choose English or हिन्दी on first launch.
+
+The app needs Android 6.0 or newer. USB OTG, camera and location are optional; manual and sample modes still work when that hardware is unavailable.
+
+This is a new JOITA app and installs alongside the old SoilDetector app. Future JOITA builds signed with the same private JOITA key will update version 4.0.0 normally.
+

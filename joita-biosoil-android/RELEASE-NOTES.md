@@ -16,3 +16,7 @@ First JOITA-branded release.
 
 Before a large field rollout, test USB connection and readings with the exact JOITA probe, OTG cable and representative Android phone brands.
 
+Release SHA-256:
+
+- APK: `d0815e1f1490636e9469f95613e879267cfdcbf3d75461887b10c7f7cf905eb5`
+- AAB: `948cac0a9674b1a7eebd7928892bace9ba5508fcbef00260d262193f918233d5`

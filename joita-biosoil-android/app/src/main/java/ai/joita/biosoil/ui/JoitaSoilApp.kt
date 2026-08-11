@@ -66,7 +66,7 @@ private sealed interface OverlayScreen {
 fun JoitaSoilApp() {
     val context = LocalContext.current
     val preferences = remember { context.getSharedPreferences("joita_preferences", Context.MODE_PRIVATE) }
-    var languageChosen by remember { mutableStateOf(preferences.getBoolean("language_chosen", false)) }
+    var languageChosen by remember { mutableStateOf(preferences.getBoolean("language_chosen", true)) }
     if (!languageChosen) {
         LanguageWelcome { tag ->
             preferences.edit().putBoolean("language_chosen", true).apply()
@@ -80,7 +80,7 @@ fun JoitaSoilApp() {
     var destination by remember { mutableStateOf(TopDestination.HOME) }
     var fields by remember { mutableStateOf(repository.fields()) }
     var tests by remember { mutableStateOf(repository.tests()) }
-    var overlay by remember { mutableStateOf<OverlayScreen?>(null) }
+    var overlay by remember { mutableStateOf<OverlayScreen?>(OverlayScreen.TestFlow) }
 
     fun refresh() {
         fields = repository.fields()
@@ -89,16 +89,9 @@ fun JoitaSoilApp() {
 
     when (val current = overlay) {
         OverlayScreen.TestFlow -> TestWizard(
-            fields = fields,
-            onBack = { overlay = null },
-            onNeedField = {
-                overlay = null
-                destination = TopDestination.FIELDS
-            },
             onSaved = { test ->
                 repository.saveTest(test)
                 refresh()
-                overlay = OverlayScreen.Result(test)
             },
         )
         is OverlayScreen.Result -> ResultScreen(

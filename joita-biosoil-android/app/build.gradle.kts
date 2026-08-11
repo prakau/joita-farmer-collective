@@ -20,8 +20,8 @@ android {
         applicationId = "ai.joita.biosoil"
         minSdk = 23
         targetSdk = 36
-        versionCode = 40000
-        versionName = "4.0.0"
+        versionCode = 40001
+        versionName = "4.0.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
         buildConfigField("String", "SUPPORT_PHONE", "\"\"")

@@ -3,6 +3,7 @@
     <string name="app_name">JOITA BioSeed AI – Soil Saathi</string>
     <string name="publisher">Made by JOITA BIOSEED AI</string>
     <string name="tagline">Soil decisions, made simple</string>
+    <string name="soil_detector">JOITA Soil Saathi</string>
     <string name="choose_language">Choose your language</string>
     <string name="english">English</string>
     <string name="hindi">हिन्दी</string>
@@ -13,6 +14,8 @@
     <string name="home_greeting">Ready for today’s field work?</string>
     <string name="start_soil_test">Start soil test</string>
     <string name="start_soil_test_body">Connect a sensor or enter values manually. Your work stays available offline.</string>
+    <string name="quick_test_body">Connect the sensor and place it in soil. Detection starts automatically; no farmer or field details are required.</string>
+    <string name="quick_test_label">Quick soil test</string>
     <string name="online">Online</string>
     <string name="offline">Offline</string>
     <string name="offline_saved">Offline — saved safely on this phone</string>
@@ -54,10 +57,12 @@
     <string name="try_sample_reading">Try sample reading</string>
     <string name="try_sample_reading_body">Explore the app with clearly labelled demonstration data.</string>
     <string name="source_usb">Live sensor</string>
+    <string name="use_usb_sensor">Use USB sensor</string>
     <string name="source_manual">Manual</string>
     <string name="source_sample">Sample</string>
     <string name="usb_unsupported">This phone does not support USB OTG host mode.</string>
     <string name="usb_no_device">Sensor not found. Connect the OTG cable and try again.</string>
+    <string name="usb_unsupported_device">USB is attached, but no supported serial sensor driver matched: %1$s</string>
     <string name="usb_permission_needed">USB access is needed to read this connected sensor.</string>
     <string name="usb_connecting">Connecting to sensor…</string>
     <string name="usb_reading">Waiting for a complete sensor reading…</string>

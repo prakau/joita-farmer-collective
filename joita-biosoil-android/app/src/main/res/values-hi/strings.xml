@@ -3,6 +3,7 @@
     <string name="app_name">JOITA बायोसीड AI – मिट्टी साथी</string>
     <string name="publisher">JOITA BIOSEED AI द्वारा निर्मित</string>
     <string name="tagline">मिट्टी की सही जानकारी, आसान तरीके से</string>
+    <string name="soil_detector">JOITA मिट्टी साथी</string>
     <string name="choose_language">अपनी भाषा चुनें</string>
     <string name="english">English</string>
     <string name="hindi">हिन्दी</string>
@@ -13,6 +14,8 @@
     <string name="home_greeting">आज खेत की जाँच के लिए तैयार हैं?</string>
     <string name="start_soil_test">मिट्टी की जाँच शुरू करें</string>
     <string name="start_soil_test_body">सेंसर जोड़ें या मान हाथ से भरें। आपका काम ऑफ़लाइन भी सुरक्षित रहेगा।</string>
+    <string name="quick_test_body">सेंसर जोड़कर मिट्टी में लगाएँ। पहचान अपने-आप शुरू होगी; किसान या खेत की जानकारी आवश्यक नहीं है।</string>
+    <string name="quick_test_label">त्वरित मिट्टी जाँच</string>
     <string name="online">ऑनलाइन</string>
     <string name="offline">ऑफ़लाइन</string>
     <string name="offline_saved">ऑफ़लाइन — इस फ़ोन में सुरक्षित</string>
@@ -54,10 +57,12 @@
     <string name="try_sample_reading">नमूना रीडिंग देखें</string>
     <string name="try_sample_reading_body">स्पष्ट नमूना लेबल वाले डेटा से ऐप समझें।</string>
     <string name="source_usb">लाइव सेंसर</string>
+    <string name="use_usb_sensor">USB सेंसर का उपयोग करें</string>
     <string name="source_manual">हाथ से दर्ज</string>
     <string name="source_sample">नमूना</string>
     <string name="usb_unsupported">यह फ़ोन USB OTG होस्ट मोड का समर्थन नहीं करता।</string>
     <string name="usb_no_device">सेंसर नहीं मिला। OTG केबल जोड़ें और फिर कोशिश करें।</string>
+    <string name="usb_unsupported_device">USB जुड़ा है, लेकिन समर्थित सीरियल सेंसर ड्राइवर नहीं मिला: %1$s</string>
     <string name="usb_permission_needed">जुड़े सेंसर को पढ़ने के लिए USB अनुमति चाहिए।</string>
     <string name="usb_connecting">सेंसर से जुड़ रहा है…</string>
     <string name="usb_reading">पूरी सेंसर रीडिंग की प्रतीक्षा…</string>

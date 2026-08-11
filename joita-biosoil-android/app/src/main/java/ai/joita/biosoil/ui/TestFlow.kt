@@ -7,9 +7,9 @@ import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -61,6 +61,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -68,6 +69,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.os.ConfigurationCompat
+import androidx.core.os.LocaleListCompat
 import ai.joita.biosoil.R
 import ai.joita.biosoil.domain.SoilAdvisor
 import ai.joita.biosoil.model.FieldProfile
@@ -95,30 +98,59 @@ private val SampleReading = SoilReading(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun TestWizard(
-    fields: List<FieldProfile>,
-    onBack: () -> Unit,
-    onNeedField: () -> Unit,
     onSaved: (SoilTestRecord) -> Unit,
 ) {
     val context = LocalContext.current
-    var step by remember { mutableStateOf(0) }
-    var selectedField by remember { mutableStateOf<FieldProfile?>(fields.firstOrNull()) }
-    var source by remember { mutableStateOf<ReadingSource?>(null) }
-    var reading by remember { mutableStateOf<SoilReading?>(null) }
+    val quickTestLabel = stringResource(R.string.quick_test_label)
+    var source by remember { mutableStateOf(ReadingSource.USB) }
+    var usbReading by remember { mutableStateOf<SoilReading?>(null) }
+    var manualReading by remember { mutableStateOf<SoilReading?>(null) }
     var sourceNote by remember { mutableStateOf("") }
-    var location by remember { mutableStateOf<Location?>(null) }
-    var photoUri by remember { mutableStateOf<String?>(null) }
-    var validationMessage by remember { mutableStateOf<Int?>(null) }
+    var savedTest by remember { mutableStateOf<SoilTestRecord?>(null) }
     var sensorState by remember { mutableStateOf<SensorState>(SensorState.NoDevice) }
-    val sensorManager = remember { UsbSoilSensorManager(context) { sensorState = it; if (it is SensorState.Complete) reading = it.reading } }
-    DisposableEffect(Unit) { onDispose(sensorManager::close) }
-
-    val navigateBack: () -> Unit = {
-        validationMessage = null
-        if (step > 0) step-- else onBack()
-        Unit
+    val systemLanguage = ConfigurationCompat.getLocales(LocalConfiguration.current)[0]?.language ?: "en"
+    val currentLanguage = AppCompatDelegate.getApplicationLocales()[0]?.language
+        ?: systemLanguage
+    val sensorManager = remember {
+        UsbSoilSensorManager(context) {
+            sensorState = it
+            if (it is SensorState.Complete) {
+                usbReading = it.reading
+                savedTest = null
+            }
+        }
     }
-    BackHandler(onBack = navigateBack)
+    DisposableEffect(Unit) { onDispose(sensorManager::close) }
+    LaunchedEffect(sensorManager) { sensorManager.connect() }
+
+    val reading = when (source) {
+        ReadingSource.USB -> usbReading
+        ReadingSource.MANUAL -> manualReading
+        ReadingSource.SAMPLE -> SampleReading
+    }
+
+    fun saveReading(share: Boolean) {
+        val actualReading = reading ?: return
+        val test = savedTest?.takeIf { it.source == source && it.reading == actualReading } ?: run {
+            val advisory = SoilAdvisor.assess(actualReading)
+            SoilTestRecord(
+                fieldId = null,
+                fieldLabel = quickTestLabel,
+                crop = "",
+                source = source,
+                reading = actualReading,
+                score = advisory.score,
+                status = advisory.status,
+                sourceNote = sourceNote,
+            ).also {
+                onSaved(it)
+                savedTest = it
+            }
+        }
+        if (share) {
+            ReportService.sharePdf(context, ReportService.createPdf(context, test))
+        }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -126,13 +158,18 @@ internal fun TestWizard(
             TopAppBar(
                 title = {
                     Column {
-                        Text(stringResource(R.string.step_format, step + 1), style = MaterialTheme.typography.bodySmall, color = InkMuted)
-                        Text(stepTitle(step), style = MaterialTheme.typography.titleLarge)
+                        Text(stringResource(R.string.soil_detector), style = MaterialTheme.typography.titleLarge)
+                        Text(stringResource(R.string.publisher), style = MaterialTheme.typography.labelSmall, color = InkMuted)
                     }
                 },
-                navigationIcon = {
-                    IconButton(onClick = navigateBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.back_action))
+                actions = {
+                    TextButton(
+                        onClick = {
+                            val language = if (currentLanguage == "hi") "en" else "hi"
+                            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(language))
+                        },
+                    ) {
+                        Text(if (currentLanguage == "hi") "EN" else "हिंदी", fontWeight = FontWeight.Bold)
                     }
                 },
             )
@@ -142,73 +179,97 @@ internal fun TestWizard(
                 modifier = Modifier.fillMaxWidth().imePadding().padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                validationMessage?.let {
-                    Text(stringResource(it), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(bottom = 8.dp))
+                savedTest?.let {
+                    Text(stringResource(R.string.test_saved), color = JoitaGreenDark, fontWeight = FontWeight.SemiBold)
+                    Spacer(Modifier.height(8.dp))
                 }
-                Button(
-                    onClick = {
-                        validationMessage = null
-                        when (step) {
-                            0 -> when {
-                                selectedField == null -> validationMessage = R.string.no_field_selected
-                                source == null -> validationMessage = R.string.choose_reading_source_error
-                                else -> {
-                                    if (source == ReadingSource.SAMPLE) reading = SampleReading
-                                    step = 1
-                                }
-                            }
-                            1 -> if (reading == null) validationMessage = R.string.complete_reading_error else step = 2
-                            2 -> step = 3
-                            else -> {
-                                val actualReading = reading ?: return@Button
-                                val field = selectedField ?: return@Button
-                                val advisory = SoilAdvisor.assess(actualReading)
-                                onSaved(
-                                    SoilTestRecord(
-                                        fieldId = field.id,
-                                        fieldLabel = "${field.farmerName} — ${field.fieldName}",
-                                        crop = field.crop,
-                                        source = source ?: ReadingSource.MANUAL,
-                                        reading = actualReading,
-                                        score = advisory.score,
-                                        status = advisory.status,
-                                        latitude = location?.latitude,
-                                        longitude = location?.longitude,
-                                        accuracyMeters = location?.accuracy,
-                                        photoUri = photoUri,
-                                        sourceNote = sourceNote,
-                                    ),
-                                )
-                            }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                ) { Text(stringResource(if (step == 3) R.string.save_soil_test else R.string.continue_action)) }
-                if (step == 0 && fields.isEmpty()) {
-                    TextButton(onClick = onNeedField) { Text(stringResource(R.string.add_first_field)) }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Button(
+                        onClick = { saveReading(share = false) },
+                        enabled = reading != null,
+                        modifier = Modifier.weight(1f).height(56.dp),
+                    ) { Text(stringResource(R.string.save_soil_test)) }
+                    OutlinedButton(
+                        onClick = { saveReading(share = true) },
+                        enabled = reading != null,
+                        modifier = Modifier.weight(1f).height(56.dp),
+                    ) {
+                        Icon(Icons.Rounded.Share, contentDescription = null)
+                        Spacer(Modifier.size(8.dp))
+                        Text(stringResource(R.string.share_report))
+                    }
                 }
             }
         },
     ) { padding ->
-        when (step) {
-            0 -> SourceStep(fields, selectedField, { selectedField = it }, source, { source = it }, padding)
-            1 -> ReadingStep(
-                source = source ?: ReadingSource.MANUAL,
-                reading = reading,
-                sourceNote = sourceNote,
-                onSourceNote = { sourceNote = it },
-                onReading = { reading = it },
-                sensorState = sensorState,
-                onSensorAction = {
-                    when (val state = sensorState) {
-                        is SensorState.PermissionRequired -> sensorManager.requestPermission(state.device)
-                        else -> sensorManager.connect()
+        QuickReadingScreen(
+            source = source,
+            onSource = {
+                source = it
+                savedTest = null
+                if (it == ReadingSource.USB) sensorManager.connect()
+            },
+            reading = reading,
+            sourceNote = sourceNote,
+            onSourceNote = {
+                sourceNote = it
+                savedTest = null
+            },
+            onManualReading = {
+                manualReading = it
+                savedTest = null
+            },
+            sensorState = sensorState,
+            onSensorAction = {
+                when (val state = sensorState) {
+                    is SensorState.PermissionRequired -> sensorManager.requestPermission(state.device)
+                    else -> sensorManager.connect()
+                }
+            },
+            padding = padding,
+        )
+    }
+}
+
+@Composable
+private fun QuickReadingScreen(
+    source: ReadingSource,
+    onSource: (ReadingSource) -> Unit,
+    reading: SoilReading?,
+    sourceNote: String,
+    onSourceNote: (String) -> Unit,
+    onManualReading: (SoilReading) -> Unit,
+    sensorState: SensorState,
+    onSensorAction: () -> Unit,
+    padding: PaddingValues,
+) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Text(stringResource(R.string.quick_test_body), color = InkMuted)
+        SourceBadge(source)
+        when (source) {
+            ReadingSource.MANUAL -> {
+                TextButton(onClick = { onSource(ReadingSource.USB) }) { Text(stringResource(R.string.use_usb_sensor)) }
+                ManualReadingForm(sourceNote, onSourceNote, onManualReading)
+            }
+            ReadingSource.SAMPLE -> MetricGrid(SampleReading)
+            ReadingSource.USB -> {
+                val stateIsError = sensorState is SensorState.Error || sensorState is SensorState.UnsupportedDevice
+                Text(sensorStateText(sensorState), color = if (stateIsError) MaterialTheme.colorScheme.error else InkMuted)
+                if (sensorState is SensorState.Error && sensorState.message.isNotBlank()) {
+                    Text(sensorState.message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                }
+                if (reading == null || stateIsError || sensorState is SensorState.PermissionRequired) {
+                    Button(onClick = onSensorAction, modifier = Modifier.fillMaxWidth().height(52.dp)) {
+                        Text(stringResource(if (sensorState is SensorState.PermissionRequired) R.string.allow_usb_access else R.string.try_again))
                     }
-                },
-                padding = padding,
-            )
-            2 -> EvidenceStep(location, { location = it }, photoUri, { photoUri = it }, padding)
-            else -> ReviewStep(selectedField, source, reading, sourceNote, location, photoUri, padding)
+                }
+                MetricGrid(reading)
+                if (reading == null) Text(stringResource(R.string.values_waiting), color = InkMuted)
+                TextButton(onClick = { onSource(ReadingSource.MANUAL) }) { Text(stringResource(R.string.enter_manually)) }
+            }
         }
     }
 }
@@ -579,27 +640,28 @@ internal fun ResultScreen(test: SoilTestRecord, onBack: () -> Unit) {
 }
 
 @Composable
-private fun MetricGrid(reading: SoilReading) {
+private fun MetricGrid(reading: SoilReading?) {
     val metrics = listOf(
-        stringResource(R.string.metric_moisture) to "${reading.moisturePercent} %",
-        stringResource(R.string.metric_temperature) to "${reading.temperatureCelsius} °C",
-        stringResource(R.string.metric_ec) to "${reading.ecUsCm} µS/cm",
-        stringResource(R.string.metric_ph) to reading.ph.toString(),
-        stringResource(R.string.metric_nitrogen) to "${reading.nitrogenMgKg} mg/kg",
-        stringResource(R.string.metric_phosphorus) to "${reading.phosphorusMgKg} mg/kg",
-        stringResource(R.string.metric_potassium) to "${reading.potassiumMgKg} mg/kg",
-        stringResource(R.string.metric_fertility) to "${reading.fertilityMgKg} mg/kg",
+        Triple(stringResource(R.string.metric_temperature), reading?.let { "${it.temperatureCelsius} °C" }, Color(0xFFFFE5E0)),
+        Triple(stringResource(R.string.metric_moisture), reading?.let { "${it.moisturePercent} %" }, Color(0xFFDDF6F6)),
+        Triple(stringResource(R.string.metric_ec), reading?.let { "${it.ecUsCm} µS/cm" }, Color(0xFFE2ECFF)),
+        Triple(stringResource(R.string.metric_ph), reading?.ph?.toString(), Color(0xFFFFF0C9)),
+        Triple(stringResource(R.string.metric_nitrogen), reading?.let { "${it.nitrogenMgKg} mg/kg" }, Color(0xFFDCF5DF)),
+        Triple(stringResource(R.string.metric_phosphorus), reading?.let { "${it.phosphorusMgKg} mg/kg" }, Color(0xFFFFE0EA)),
+        Triple(stringResource(R.string.metric_potassium), reading?.let { "${it.potassiumMgKg} mg/kg" }, Color(0xFFEDE1FF)),
+        Triple(stringResource(R.string.metric_fertility), reading?.let { "${it.fertilityMgKg} mg/kg" }, Color(0xFFFFE6D8)),
     )
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val columns = if (maxWidth >= 360.dp) 2 else 1
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             metrics.chunked(columns).forEach { row ->
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    row.forEach { (label, value) ->
-                        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant), modifier = Modifier.weight(1f)) {
-                            Column(Modifier.padding(12.dp)) {
-                                Text(label, style = MaterialTheme.typography.bodySmall, color = InkMuted)
-                                Text(value, fontWeight = FontWeight.SemiBold)
+                    row.forEach { (label, value, background) ->
+                        Card(colors = CardDefaults.cardColors(containerColor = background), modifier = Modifier.weight(1f)) {
+                            Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(label, style = MaterialTheme.typography.bodySmall, color = InkMuted, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                Spacer(Modifier.height(8.dp))
+                                Text(value ?: "—", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                             }
                         }
                     }
@@ -621,18 +683,17 @@ private fun stepTitle(step: Int) = stringResource(
 )
 
 @Composable
-private fun sensorStateText(state: SensorState) = stringResource(
-    when (state) {
-        SensorState.Unsupported -> R.string.usb_unsupported
-        SensorState.NoDevice -> R.string.usb_no_device
-        is SensorState.PermissionRequired -> R.string.usb_permission_needed
-        SensorState.Connecting -> R.string.usb_connecting
-        SensorState.Connected -> R.string.sensor_connected
-        SensorState.Reading -> R.string.usb_reading
-        is SensorState.Complete -> R.string.reading_complete
-        is SensorState.Error -> R.string.usb_error
-    },
-)
+private fun sensorStateText(state: SensorState) = when (state) {
+    SensorState.Unsupported -> stringResource(R.string.usb_unsupported)
+    SensorState.NoDevice -> stringResource(R.string.usb_no_device)
+    is SensorState.UnsupportedDevice -> stringResource(R.string.usb_unsupported_device, state.details)
+    is SensorState.PermissionRequired -> stringResource(R.string.usb_permission_needed)
+    SensorState.Connecting -> stringResource(R.string.usb_connecting)
+    SensorState.Connected -> stringResource(R.string.sensor_connected)
+    SensorState.Reading -> stringResource(R.string.usb_reading)
+    is SensorState.Complete -> stringResource(R.string.reading_complete)
+    is SensorState.Error -> stringResource(R.string.usb_error)
+}
 
 @Composable
 private fun statusLabel(status: SoilStatus) = stringResource(

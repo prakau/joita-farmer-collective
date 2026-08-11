@@ -1,0 +1,2 @@
+-keep class com.hoho.android.usbserial.driver.** { *; }
+-dontwarn org.jetbrains.annotations.**

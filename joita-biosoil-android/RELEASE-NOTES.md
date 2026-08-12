@@ -1,4 +1,23 @@
-# Release 4.0.1 — Direct Soil Reading
+# Release 4.1.0 — Reliable Sensor + Farmer Advice
+
+- Restores the exact working SoilDetector 3.2.0 response behavior: the probe’s `0x7F` sentinel byte becomes zero and one unusual register no longer discards all eight measurements.
+- Adds regression tests derived from the working APK’s receive callback.
+- Shows Low / In range / High on each live parameter.
+- Averages up to five recent sensor responses for a steadier same-spot result, with a one-tap reset when moving to a new spot.
+- Gives immediate English/Hindi farmer actions for dry soil, moisture, pH, possible salinity and N-P-K indicators.
+- Adds an English/Hindi measurement guide translated from the supplied manufacturer manual: soil moisture and preparation, root-zone depth, full probe insertion, stabilization time, repeat sampling and cleaning.
+- Adds the same farmer actions to the shared JOITA PDF report.
+- Clearly identifies the manufacturer “fertility” value as a soluble-salt indicator, not an official Indian soil-fertility grade.
+- Avoids invented fertiliser quantities; crop/area-specific doses must use a recognised soil test or Soil Health Card and qualified advice.
+
+Release SHA-256:
+
+- APK: `26ee649622fb2d8615756cb4d81c531d62ff06f4510c48f3ff225be0550b2632`
+- AAB: `b1bdbe3699cd6cb57d98e7377143c8c162e88c0642f695ef8892100445231184`
+
+Physical verification remains required on the same OPPO phone, OTG cable and probe because no Android hardware is connected to this build machine.
+
+## Release 4.0.1 — Direct Soil Reading
 
 - Opens directly to the eight live soil measurements—no home page, field form, or setup wizard.
 - Automatically discovers the USB OTG probe and requests Android USB permission.

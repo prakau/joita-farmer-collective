@@ -1,6 +1,7 @@
 package ai.joita.biosoil.report
 
 import android.content.Context
+import android.content.ClipData
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Color
@@ -8,6 +9,7 @@ import android.graphics.Paint
 import android.graphics.pdf.PdfDocument
 import androidx.core.content.FileProvider
 import ai.joita.biosoil.R
+import ai.joita.biosoil.domain.SoilAdvisor
 import ai.joita.biosoil.model.ReadingSource
 import ai.joita.biosoil.model.SoilStatus
 import ai.joita.biosoil.model.SoilTestRecord
@@ -78,19 +80,19 @@ object ReportService {
             canvas.drawText(value, columnX, rowY + 17f, paint)
         }
 
-        text(context.getString(R.string.evidence_status), 590f, 17f, true)
-        val gps = if (test.latitude != null && test.longitude != null) {
-            "${test.latitude}, ${test.longitude}${test.accuracyMeters?.let { " (±${it.toInt()} m)" } ?: ""}"
-        } else context.getString(R.string.not_captured)
-        text("${context.getString(R.string.location_label)}: $gps", 616f)
-        text("${context.getString(R.string.photo_label)}: ${if (test.photoUri != null) context.getString(R.string.captured) else context.getString(R.string.not_captured)}", 638f)
-
-        paint.color = Color.rgb(244, 166, 34)
-        canvas.drawRoundRect(margin, 672f, 553f, 770f, 12f, 12f, paint)
+        paint.color = Color.rgb(255, 226, 168)
+        canvas.drawRoundRect(margin, 570f, 553f, 773f, 12f, 12f, paint)
+        text(context.getString(R.string.farmer_advice_title), 598f, 17f, true)
+        val advisory = SoilAdvisor.assess(test.reading)
         paint.color = Color.rgb(17, 24, 23)
-        paint.textSize = 12f
+        paint.textSize = 11f
+        paint.typeface = android.graphics.Typeface.DEFAULT
+        var adviceY = 622f
+        advisory.immediateActions.take(2).forEach { action ->
+            adviceY = drawWrapped(canvas, paint, "• ${actionLabel(context, action)}", margin + 14f, adviceY, 475f, 15f) + 5f
+        }
         paint.typeface = android.graphics.Typeface.DEFAULT_BOLD
-        drawWrapped(canvas, paint, context.getString(R.string.advisory_disclaimer), margin + 14f, 700f, 475f, 17f)
+        drawWrapped(canvas, paint, context.getString(R.string.advisory_disclaimer), margin + 14f, 741f, 475f, 14f)
 
         text(context.getString(R.string.publisher), 812f, 11f, true, Color.rgb(18, 92, 42))
         document.finishPage(page)
@@ -99,14 +101,22 @@ object ReportService {
         return file
     }
 
-    fun sharePdf(context: Context, file: File) {
+    fun sharePdf(context: Context, file: File, test: SoilTestRecord) {
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
+        val resultStatus = statusLabel(context, test.status)
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "application/pdf"
             putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_SUBJECT, context.getString(R.string.share_report_subject))
+            putExtra(Intent.EXTRA_TEXT, context.getString(R.string.share_report_message, test.score, resultStatus))
+            clipData = ClipData.newRawUri(context.getString(R.string.report_title), uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_report)))
+        context.startActivity(
+            Intent.createChooser(intent, context.getString(R.string.share_report)).apply {
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            },
+        )
     }
 
     private fun sourceLabel(context: Context, source: ReadingSource) = when (source) {
@@ -121,7 +131,21 @@ object ReportService {
         SoilStatus.URGENT -> context.getString(R.string.status_urgent)
     }
 
-    private fun drawWrapped(canvas: android.graphics.Canvas, paint: Paint, value: String, x: Float, y: Float, width: Float, lineHeight: Float) {
+    private fun actionLabel(context: Context, action: String) = context.getString(
+        when (action) {
+            "prepare_moist_soil" -> R.string.advice_prepare_moist_soil
+            "irrigate" -> R.string.advice_irrigate
+            "improve_drainage" -> R.string.advice_drainage
+            "acidic_ph" -> R.string.advice_acidic_ph
+            "alkaline_ph" -> R.string.advice_alkaline_ph
+            "high_salinity" -> R.string.advice_high_salinity
+            "low_nutrients" -> R.string.advice_low_nutrients
+            "high_nutrients" -> R.string.advice_high_nutrients
+            else -> R.string.advice_maintain
+        },
+    )
+
+    private fun drawWrapped(canvas: android.graphics.Canvas, paint: Paint, value: String, x: Float, y: Float, width: Float, lineHeight: Float): Float {
         var line = ""
         var currentY = y
         value.split(" ").forEach { word ->
@@ -133,5 +157,6 @@ object ReportService {
             } else line = next
         }
         if (line.isNotEmpty()) canvas.drawText(line, x, currentY, paint)
+        return currentY
     }
 }

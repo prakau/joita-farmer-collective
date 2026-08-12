@@ -1,15 +1,17 @@
-JOITA BIOSEED AI - SOIL SAATHI 4.0.1
+JOITA BIOSEED AI - SOIL SAATHI 4.1.0
 
 ANDROID INSTALLATION
 
-1. Download or copy JOITA-BioSeed-AI-Soil-Saathi-4.0.1.apk to the Android phone.
+1. Download or copy JOITA-BioSeed-AI-Soil-Saathi-4.1.0.apk to the Android phone.
 2. Open the file from Files, WhatsApp, email or another trusted transfer app.
 3. If Android asks, allow that transfer app to install unknown apps.
-4. Tap Install (or Update when 4.0.0 is already installed), then open “JOITA BioSeed AI – Soil Saathi”.
+4. Tap Install (or Update when a JOITA 4.0.x version is already installed), then open “JOITA BioSeed AI – Soil Saathi”.
 5. Connect the soil sensor with USB OTG. The app opens directly to the eight measurements and asks for USB access automatically.
-6. Tap Save to keep the reading or Share to create and send the JOITA PDF report.
-7. Use EN/हिन्दी at the top to change language. Use manual entry only if the sensor is unavailable.
+6. Fully insert the probes into moist soil at root depth. Keep them still; wait 3–5 seconds for most values and longer for pH when needed.
+7. Read the Low / In range / High labels and the farmer actions below the values. Test 3–5 fresh nearby spots before a field decision.
+8. Tap Save to keep the reading or Share to create and send the JOITA PDF report.
+9. Use EN/हिन्दी at the top to change language and the book icon to open the full measurement guide.
 
 The app needs Android 6.0 or newer. USB OTG is optional; manual entry still works when the sensor is unavailable.
 
-This JOITA app installs alongside the old SoilDetector app. It updates JOITA 4.0.0 normally and keeps its saved data.
+This JOITA app installs alongside the old SoilDetector app. It updates JOITA 4.0.x normally and keeps its saved data.

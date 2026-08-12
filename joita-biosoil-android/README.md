@@ -20,7 +20,7 @@ A new, offline-first Android soil companion made by **JOITA BIOSEED AI** for Ind
 ## Android compatibility
 
 - Package: `ai.joita.biosoil`
-- Version: `4.0.1` (`40001`)
+- Version: `4.1.0` (`40100`)
 - Minimum: Android 6.0 / API 23
 - Target and compile SDK: Android 16 / API 36
 - One universal APK containing ARM64, ARMv7, x86 and x86-64 support.
@@ -29,13 +29,13 @@ The new JOITA package installs alongside the supplied SoilDetector APK. It canno
 
 ## Release files
 
-- `release/JOITA-BioSeed-AI-Soil-Saathi-4.0.1.apk` — direct installation on Android phones.
-- `release/JOITA-BioSeed-AI-Soil-Saathi-4.0.1.aab` — Google Play submission bundle.
+- `release/JOITA-BioSeed-AI-Soil-Saathi-4.1.0.apk` — direct installation on Android phones.
+- `release/JOITA-BioSeed-AI-Soil-Saathi-4.1.0.aab` — Google Play submission bundle.
 - `release/SHA256SUMS.txt` — file integrity hashes.
 
 ## Installation
 
-Transfer the APK to the phone, open it from Android’s Files app or another trusted transfer app, allow that app to install unknown apps if prompted, and tap **Install**. Version 4.0.1 updates an existing JOITA 4.0.0 installation. The release folder includes `INSTALL.txt` with the same steps. For a development device with USB debugging enabled, use `adb install -r release/JOITA-BioSeed-AI-Soil-Saathi-4.0.1.apk`.
+Transfer the APK to the phone, open it from Android’s Files app or another trusted transfer app, allow that app to install unknown apps if prompted, and tap **Install**. Version 4.1.0 updates an existing JOITA 4.0.x installation. The release folder includes `INSTALL.txt` with the same steps. For a development device with USB debugging enabled, use `adb install -r release/JOITA-BioSeed-AI-Soil-Saathi-4.1.0.apk`.
 
 ## Languages and offline behavior
 
@@ -47,7 +47,7 @@ Android displays the standard USB-device consent prompt automatically when a com
 
 ## Signing and future updates
 
-The release APK and AAB use the dedicated private JOITA 4096-bit RSA signing key. Preserve `release-signing/joita-biosoil-release.jks`, its private credentials file and `keystore.properties` in at least two secure backups. A future APK with a higher version code, the same package and the same key can update version 4.0.1 without losing local app records.
+The release APK and AAB use the dedicated private JOITA 4096-bit RSA signing key. Preserve `release-signing/joita-biosoil-release.jks`, its private credentials file and `keystore.properties` in at least two secure backups. A future APK with a higher version code, the same package and the same key can update version 4.1.0 without losing local app records.
 
 ## Build
 

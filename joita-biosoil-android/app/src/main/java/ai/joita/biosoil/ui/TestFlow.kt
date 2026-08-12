@@ -6,7 +6,9 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
@@ -29,12 +31,14 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.PictureAsPdf
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Usb
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -102,12 +106,17 @@ internal fun TestWizard(
 ) {
     val context = LocalContext.current
     val quickTestLabel = stringResource(R.string.quick_test_label)
+    val pdfDownloadedMessage = stringResource(R.string.pdf_downloaded)
+    val pdfDownloadFailedMessage = stringResource(R.string.pdf_download_failed)
     var source by remember { mutableStateOf(ReadingSource.USB) }
     var usbReading by remember { mutableStateOf<SoilReading?>(null) }
     var manualReading by remember { mutableStateOf<SoilReading?>(null) }
+    var usbSamples by remember { mutableStateOf<List<SoilReading>>(emptyList()) }
     var sourceNote by remember { mutableStateOf("") }
     var savedTest by remember { mutableStateOf<SoilTestRecord?>(null) }
+    var pendingDownload by remember { mutableStateOf<File?>(null) }
     var sensorState by remember { mutableStateOf<SensorState>(SensorState.NoDevice) }
+    var guideVisible by remember { mutableStateOf(false) }
     val systemLanguage = ConfigurationCompat.getLocales(LocalConfiguration.current)[0]?.language ?: "en"
     val currentLanguage = AppCompatDelegate.getApplicationLocales()[0]?.language
         ?: systemLanguage
@@ -115,13 +124,31 @@ internal fun TestWizard(
         UsbSoilSensorManager(context) {
             sensorState = it
             if (it is SensorState.Complete) {
-                usbReading = it.reading
+                val nextSamples = (usbSamples + it.reading).takeLast(5)
+                usbSamples = nextSamples
+                usbReading = averageReadings(nextSamples)
                 savedTest = null
             }
         }
     }
     DisposableEffect(Unit) { onDispose(sensorManager::close) }
     LaunchedEffect(sensorManager) { sensorManager.connect() }
+    val downloadLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/pdf"),
+    ) { uri: Uri? ->
+        val sourceFile = pendingDownload
+        val saved = uri != null && sourceFile != null && runCatching {
+            context.contentResolver.openOutputStream(uri)?.use { output ->
+                sourceFile.inputStream().use { input -> input.copyTo(output) }
+            } ?: error("Could not open the selected file")
+        }.isSuccess
+        Toast.makeText(
+            context,
+            if (saved) pdfDownloadedMessage else pdfDownloadFailedMessage,
+            Toast.LENGTH_LONG,
+        ).show()
+        pendingDownload = null
+    }
 
     val reading = when (source) {
         ReadingSource.USB -> usbReading
@@ -148,8 +175,28 @@ internal fun TestWizard(
             }
         }
         if (share) {
-            ReportService.sharePdf(context, ReportService.createPdf(context, test))
+            ReportService.sharePdf(context, ReportService.createPdf(context, test), test)
         }
+    }
+
+    fun downloadReading() {
+        val actualReading = reading ?: return
+        val advisory = SoilAdvisor.assess(actualReading)
+        val test = savedTest?.takeIf { it.source == source && it.reading == actualReading } ?: SoilTestRecord(
+            fieldId = null,
+            fieldLabel = quickTestLabel,
+            crop = "",
+            source = source,
+            reading = actualReading,
+            score = advisory.score,
+            status = advisory.status,
+            sourceNote = sourceNote,
+        ).also {
+            onSaved(it)
+            savedTest = it
+        }
+        pendingDownload = ReportService.createPdf(context, test)
+        downloadLauncher.launch("JOITA-Soil-Saathi-${test.id.take(8)}.pdf")
     }
 
     Scaffold(
@@ -163,6 +210,9 @@ internal fun TestWizard(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { guideVisible = true }) {
+                        Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = stringResource(R.string.sensor_guide))
+                    }
                     TextButton(
                         onClick = {
                             val language = if (currentLanguage == "hi") "en" else "hi"
@@ -190,14 +240,24 @@ internal fun TestWizard(
                         modifier = Modifier.weight(1f).height(56.dp),
                     ) { Text(stringResource(R.string.save_soil_test)) }
                     OutlinedButton(
-                        onClick = { saveReading(share = true) },
+                        onClick = ::downloadReading,
                         enabled = reading != null,
                         modifier = Modifier.weight(1f).height(56.dp),
                     ) {
-                        Icon(Icons.Rounded.Share, contentDescription = null)
+                        Icon(Icons.Rounded.PictureAsPdf, contentDescription = null)
                         Spacer(Modifier.size(8.dp))
-                        Text(stringResource(R.string.share_report))
+                        Text(stringResource(R.string.download_pdf))
                     }
+                }
+                Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = { saveReading(share = true) },
+                    enabled = reading != null,
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                ) {
+                    Icon(Icons.Rounded.Share, contentDescription = null)
+                    Spacer(Modifier.size(8.dp))
+                    Text(stringResource(R.string.share_email_whatsapp))
                 }
             }
         },
@@ -220,7 +280,10 @@ internal fun TestWizard(
                 savedTest = null
             },
             sensorState = sensorState,
+            sampleCount = if (source == ReadingSource.USB) usbSamples.size else 0,
             onSensorAction = {
+                usbSamples = emptyList()
+                usbReading = null
                 when (val state = sensorState) {
                     is SensorState.PermissionRequired -> sensorManager.requestPermission(state.device)
                     else -> sensorManager.connect()
@@ -229,6 +292,7 @@ internal fun TestWizard(
             padding = padding,
         )
     }
+    if (guideVisible) SensorGuideDialog(onDismiss = { guideVisible = false })
 }
 
 @Composable
@@ -240,6 +304,7 @@ private fun QuickReadingScreen(
     onSourceNote: (String) -> Unit,
     onManualReading: (SoilReading) -> Unit,
     sensorState: SensorState,
+    sampleCount: Int,
     onSensorAction: () -> Unit,
     padding: PaddingValues,
 ) {
@@ -267,7 +332,19 @@ private fun QuickReadingScreen(
                     }
                 }
                 MetricGrid(reading)
-                if (reading == null) Text(stringResource(R.string.values_waiting), color = InkMuted)
+                if (reading == null) {
+                    Text(stringResource(R.string.values_waiting), color = InkMuted)
+                } else {
+                    Text(
+                        stringResource(R.string.live_samples_averaged, sampleCount),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = JoitaGreenDark,
+                    )
+                    LiveFarmerAdvice(reading)
+                    OutlinedButton(onClick = onSensorAction, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.new_spot_reset))
+                    }
+                }
                 TextButton(onClick = { onSource(ReadingSource.MANUAL) }) { Text(stringResource(R.string.enter_manually)) }
             }
         }
@@ -617,7 +694,7 @@ internal fun ResultScreen(test: SoilTestRecord, onBack: () -> Unit) {
             }
             item {
                 Button(
-                    onClick = { ReportService.sharePdf(context, ReportService.createPdf(context, test)) },
+                    onClick = { ReportService.sharePdf(context, ReportService.createPdf(context, test), test) },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                 ) {
                     Icon(Icons.Rounded.Share, contentDescription = null)
@@ -627,7 +704,7 @@ internal fun ResultScreen(test: SoilTestRecord, onBack: () -> Unit) {
             }
             item {
                 OutlinedButton(
-                    onClick = { ReportService.sharePdf(context, ReportService.createPdf(context, test)) },
+                    onClick = { ReportService.sharePdf(context, ReportService.createPdf(context, test), test) },
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                 ) {
                     Icon(Icons.Rounded.PictureAsPdf, contentDescription = null)
@@ -641,27 +718,40 @@ internal fun ResultScreen(test: SoilTestRecord, onBack: () -> Unit) {
 
 @Composable
 private fun MetricGrid(reading: SoilReading?) {
+    val assessmentByKey = remember(reading) {
+        reading?.let { SoilAdvisor.assess(it).assessments.associateBy { assessment -> assessment.key } }.orEmpty()
+    }
     val metrics = listOf(
-        Triple(stringResource(R.string.metric_temperature), reading?.let { "${it.temperatureCelsius} °C" }, Color(0xFFFFE5E0)),
-        Triple(stringResource(R.string.metric_moisture), reading?.let { "${it.moisturePercent} %" }, Color(0xFFDDF6F6)),
-        Triple(stringResource(R.string.metric_ec), reading?.let { "${it.ecUsCm} µS/cm" }, Color(0xFFE2ECFF)),
-        Triple(stringResource(R.string.metric_ph), reading?.ph?.toString(), Color(0xFFFFF0C9)),
-        Triple(stringResource(R.string.metric_nitrogen), reading?.let { "${it.nitrogenMgKg} mg/kg" }, Color(0xFFDCF5DF)),
-        Triple(stringResource(R.string.metric_phosphorus), reading?.let { "${it.phosphorusMgKg} mg/kg" }, Color(0xFFFFE0EA)),
-        Triple(stringResource(R.string.metric_potassium), reading?.let { "${it.potassiumMgKg} mg/kg" }, Color(0xFFEDE1FF)),
-        Triple(stringResource(R.string.metric_fertility), reading?.let { "${it.fertilityMgKg} mg/kg" }, Color(0xFFFFE6D8)),
+        MetricDisplay("temperature", stringResource(R.string.metric_temperature), reading?.let { "${it.temperatureCelsius} °C" }, Color(0xFFFFE5E0)),
+        MetricDisplay("moisture", stringResource(R.string.metric_moisture), reading?.let { "${it.moisturePercent} %" }, Color(0xFFDDF6F6)),
+        MetricDisplay("ec", stringResource(R.string.metric_ec), reading?.let { "${it.ecUsCm} µS/cm" }, Color(0xFFE2ECFF)),
+        MetricDisplay("ph", stringResource(R.string.metric_ph), reading?.ph?.toString(), Color(0xFFFFF0C9)),
+        MetricDisplay("nitrogen", stringResource(R.string.metric_nitrogen), reading?.let { "${it.nitrogenMgKg} mg/kg" }, Color(0xFFDCF5DF)),
+        MetricDisplay("phosphorus", stringResource(R.string.metric_phosphorus), reading?.let { "${it.phosphorusMgKg} mg/kg" }, Color(0xFFFFE0EA)),
+        MetricDisplay("potassium", stringResource(R.string.metric_potassium), reading?.let { "${it.potassiumMgKg} mg/kg" }, Color(0xFFEDE1FF)),
+        MetricDisplay("fertility", stringResource(R.string.metric_fertility), reading?.let { "${it.fertilityMgKg} mg/kg" }, Color(0xFFFFE6D8)),
     )
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val columns = if (maxWidth >= 360.dp) 2 else 1
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             metrics.chunked(columns).forEach { row ->
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    row.forEach { (label, value, background) ->
-                        Card(colors = CardDefaults.cardColors(containerColor = background), modifier = Modifier.weight(1f)) {
+                    row.forEach { metric ->
+                        val assessment = assessmentByKey[metric.key]
+                        Card(colors = CardDefaults.cardColors(containerColor = metric.background), modifier = Modifier.weight(1f)) {
                             Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(label, style = MaterialTheme.typography.bodySmall, color = InkMuted, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                Text(metric.label, style = MaterialTheme.typography.bodySmall, color = InkMuted, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                                 Spacer(Modifier.height(8.dp))
-                                Text(value ?: "—", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                                Text(metric.value ?: "—", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                                if (assessment != null) {
+                                    Spacer(Modifier.height(6.dp))
+                                    Text(
+                                        parameterStatusLabel(assessment.status),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = parameterStatusColor(assessment.status),
+                                    )
+                                }
                             }
                         }
                     }
@@ -670,6 +760,109 @@ private fun MetricGrid(reading: SoilReading?) {
             }
         }
     }
+}
+
+private data class MetricDisplay(
+    val key: String,
+    val label: String,
+    val value: String?,
+    val background: Color,
+)
+
+@Composable
+private fun LiveFarmerAdvice(reading: SoilReading) {
+    val advisory = remember(reading) { SoilAdvisor.assess(reading) }
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = if (reading.moisturePercent < 15.0) Color(0xFFFFE2A8) else LeafLight,
+        ),
+        shape = MaterialTheme.shapes.extraLarge,
+    ) {
+        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(stringResource(R.string.farmer_advice_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(
+                stringResource(R.string.quick_indicator_format, advisory.score, statusLabel(advisory.status)),
+                color = JoitaGreenDark,
+                fontWeight = FontWeight.SemiBold,
+            )
+            advisory.immediateActions.forEach { action ->
+                Text("• ${adviceLabel(action)}", style = MaterialTheme.typography.bodyMedium)
+            }
+            HorizontalDivider(color = JoitaGreen.copy(alpha = 0.2f))
+            Text(stringResource(R.string.advice_retest_points), style = MaterialTheme.typography.bodySmall, color = InkMuted)
+            Text(stringResource(R.string.sensor_advice_limit), style = MaterialTheme.typography.bodySmall, color = SoilBrown, fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
+@Composable
+private fun SensorGuideDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.sensor_guide)) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                GuideSection(
+                    R.string.guide_prepare_title,
+                    listOf(R.string.guide_prepare_moist, R.string.guide_prepare_depth, R.string.guide_prepare_debris),
+                )
+                GuideSection(
+                    R.string.guide_measure_title,
+                    listOf(R.string.guide_measure_insert, R.string.guide_measure_wait, R.string.guide_measure_repeat),
+                )
+                GuideSection(
+                    R.string.guide_understand_title,
+                    listOf(R.string.guide_understand_ec, R.string.guide_understand_npk, R.string.guide_understand_fertility),
+                )
+                GuideSection(
+                    R.string.guide_after_title,
+                    listOf(R.string.guide_after_clean, R.string.guide_after_protect),
+                )
+                Text(stringResource(R.string.sensor_advice_limit), color = SoilBrown, fontWeight = FontWeight.SemiBold)
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.done)) } },
+    )
+}
+
+@Composable
+private fun GuideSection(title: Int, items: List<Int>) {
+    Text(stringResource(title), style = MaterialTheme.typography.titleMedium, color = JoitaGreenDark, fontWeight = FontWeight.Bold)
+    items.forEach { Text("• ${stringResource(it)}") }
+}
+
+private fun averageReadings(readings: List<SoilReading>): SoilReading? {
+    if (readings.isEmpty()) return null
+    return SoilReading(
+        moisturePercent = readings.map { it.moisturePercent }.average().roundOneDecimal(),
+        temperatureCelsius = readings.map { it.temperatureCelsius }.average().roundOneDecimal(),
+        ecUsCm = readings.map { it.ecUsCm }.average().toInt(),
+        ph = readings.map { it.ph }.average().roundOneDecimal(),
+        nitrogenMgKg = readings.map { it.nitrogenMgKg }.average().toInt(),
+        phosphorusMgKg = readings.map { it.phosphorusMgKg }.average().toInt(),
+        potassiumMgKg = readings.map { it.potassiumMgKg }.average().toInt(),
+        fertilityMgKg = readings.map { it.fertilityMgKg }.average().toInt(),
+    )
+}
+
+private fun Double.roundOneDecimal(): Double = kotlin.math.round(this * 10.0) / 10.0
+
+@Composable
+private fun parameterStatusLabel(status: ParameterStatus): String = stringResource(
+    when (status) {
+        ParameterStatus.GOOD -> R.string.status_good
+        ParameterStatus.LOW -> R.string.status_low
+        ParameterStatus.HIGH -> R.string.status_high
+    },
+)
+
+private fun parameterStatusColor(status: ParameterStatus): Color = when (status) {
+    ParameterStatus.GOOD -> JoitaGreenDark
+    ParameterStatus.LOW -> InfoBlue
+    ParameterStatus.HIGH -> Color(0xFFB3261E)
 }
 
 @Composable
@@ -721,10 +914,14 @@ private fun assessmentLabel(key: String) = stringResource(
 @Composable
 private fun adviceLabel(key: String) = stringResource(
     when (key) {
+        "prepare_moist_soil" -> R.string.advice_prepare_moist_soil
         "irrigate" -> R.string.advice_irrigate
         "improve_drainage" -> R.string.advice_drainage
-        "confirm_ph" -> R.string.advice_confirm_ph
-        "nutrient_plan" -> R.string.advice_nutrient_plan
+        "acidic_ph" -> R.string.advice_acidic_ph
+        "alkaline_ph" -> R.string.advice_alkaline_ph
+        "high_salinity" -> R.string.advice_high_salinity
+        "low_nutrients" -> R.string.advice_low_nutrients
+        "high_nutrients" -> R.string.advice_high_nutrients
         else -> R.string.advice_maintain
     },
 )

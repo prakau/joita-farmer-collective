@@ -2,15 +2,15 @@
 status: awaiting_human_verify
 trigger: "First real-phone test of JOITA Soil Saathi 4.0.0 shows a huge required Add field dialog that blocks the core reading flow, typing is difficult, and the USB soil sensor is not detected. User wants the app to open directly to reading, require little/no typing, then save and share easily."
 created: 2026-08-11T21:06:18+05:30
-updated: 2026-08-11T21:29:46+05:30
+updated: 2026-08-12T21:14:02+05:30
 ---
 
 ## Current Focus
 
-hypothesis: The confirmed field-gate and USB lifecycle regressions are fixed in code; only real-phone OTG/probe behavior remains unobservable locally.
-test: Install the 4.0.1 APK on the original phone, launch it with the probe attached, accept USB access if prompted, and confirm eight live values plus same-screen Save and Share.
-expecting: Launch shows only the branded JOITA Soil Saathi reading screen, automatically detects the QinHeng probe, fills all eight tiles, and saves/shares without any field/profile typing.
-next_action: Await physical phone and sensor verification from the user/root agent; if detection still fails, capture the displayed VID/PID diagnostic and Android model/OTG state.
+hypothesis: Confirmed root cause: JOITA replaced the working probe callback's length-only acceptance and 0x7F byte normalization with an all-or-nothing plausibility filter and ordinary unsigned conversion, so a sentinel/out-of-range register drops the complete eight-metric response.
+test: Self-verification is complete. Install the newly built release on the same OPPO phone, keep OTG enabled, connect the same proven probe/cable, and observe whether all eight values replace placeholders.
+expecting: The exact payloads discarded by 4.0.1 are now decoded using SoilDetector 3.2.0 semantics, so readings should appear without any field/profile action.
+next_action: Await physical OPPO/probe verification; if readings still do not appear, capture the visible sensor status and attach the phone via adb for raw RX/TX logging.
 
 ## Symptoms
 
@@ -29,6 +29,18 @@ started: First real-phone test after version 4.0.0 release; it has not yet worke
 - hypothesis: FLAG_IMMUTABLE alone prevents UsbManager from returning permission extras.
   evidence: Current official Android USB host guidance explicitly constructs the USB permission PendingIntent with FLAG_IMMUTABLE.
   timestamp: 2026-08-11T21:24:03+05:30
+
+- hypothesis: usb-serial-for-android 3.11 uses incompatible CH34x initialization or read-loop semantics.
+  evidence: Decompiled comparison shows identical CH34x control transfers, endpoint selection, 9600/8N1 configuration, max-packet read-buffer sizing and blocking port.read(buffer, 0) callbacks in the working and current libraries.
+  timestamp: 2026-08-12T21:01:42+05:30
+
+- hypothesis: The current accumulator's packet-boundary handling prevents the first complete response from being parsed.
+  evidence: The target's working IO manager only handles callback chunks of at least 19 bytes. For that same first callback, JOITA also presents bytes 0..18 to parseFrame; the accumulator only differs after parsing/rejection, so it cannot explain the initial loss independently of the parser filter.
+  timestamp: 2026-08-12T21:01:42+05:30
+
+- hypothesis: Immediate first poll, sequential nonce, or a 1000ms write timeout prevents every response.
+  evidence: Both apps repeat the identical seven fixed command bytes every second; the final byte spans the same 0..255 set (random versus sequential), and delay/timeout do not change transmitted bytes. A 200ms warm-up could lose only the first poll, not all later polls.
+  timestamp: 2026-08-12T21:01:42+05:30
 
 ## Evidence
 
@@ -102,9 +114,54 @@ started: First real-phone test after version 4.0.0 release; it has not yet worke
   found: app-release.apk reports ai.joita.biosoil, versionCode 40001, versionName 4.0.1, minSdk 23 and targetSdk 36; apksigner verifies v1, v2 and v3 with one signer. Final SHA-256 is 95b7668b1eea67f0e17c1434817a5cab645a611b1ea85436930765f83194dff1.
   implication: The locally generated release artifact is structurally ready for root's signing/redeployment workflow, subject to physical USB verification.
 
+- timestamp: 2026-08-11T21:50:56+05:30
+  checked: 4.0.1 real-phone human verification checkpoint
+  found: JOITA 4.0.1 installs and opens directly as intended, but shows no sensor readings/data with the exact original probe. On the same OPPO phone with OTG enabled and the same cable/probe, SoilDetector 3.2.0 still produces readings.
+  implication: The simple UI fix is verified, while the USB fix failed. Phone OTG configuration, cable and sensor hardware are controlled working variables; investigation must isolate an implementation/protocol difference between the two apps.
+
+- timestamp: 2026-08-12T20:47:18+05:30
+  checked: complete SoilDetector 3.2.0 receive callback versus current SoilProbeProtocol.parseFrame
+  found: The working callback accepts every USB callback of at least 19 bytes and unconditionally renders offsets 3..18. JOITA extracts the same offsets but returns null for the entire frame if moisture is above 100.0, temperature is outside -50.0..100.0, or pH is above 14.0.
+  implication: JOITA introduced a new all-or-nothing rejection point after bytes are received; a single probe sentinel or legitimate out-of-range raw register produces exactly the reported result—no values on any tile—while 3.2.0 still shows data.
+
+- timestamp: 2026-08-12T20:50:05+05:30
+  checked: SoilDetector MainActivity.m3091p and JOITA protocol unit tests
+  found: The working app normalizes byte 0x7F to zero for every decoded register byte. JOITA uses ordinary unsigned conversion, and its test suite enshrines rejection of a complete 19-byte frame when pH is 25.5 even though the original renders that frame.
+  implication: Current tests only prove the newly invented parser policy; they do not prove compatibility with the physical probe. A 0x7F sentinel in temperature or pH is converted to a benign zero by 3.2.0 but can make JOITA discard all eight values.
+
+- timestamp: 2026-08-12T20:54:28+05:30
+  checked: bundled SoilDetector CH34x driver and read manager versus usb-serial-for-android 3.11.0
+  found: Both CH34x implementations issue the same claim-interface sequence, endpoint selection, initialization control transfers, 9600-baud setup and 8N1 control byte. Both managers allocate one USB max-packet read buffer, call port.read(buffer, 0) continuously, copy exactly the returned byte count, and deliver each read unchanged to the listener.
+  implication: A usb-serial library initialization/read regression is not supported. The first complete USB response reaches each app with the same packet boundary and bytes; their first semantic divergence is JOITA's parser rejection.
+
+- timestamp: 2026-08-12T20:54:28+05:30
+  checked: direct Android device availability via adb
+  found: adb is installed but reports no attached devices in this workspace session.
+  implication: Raw on-phone bytes cannot be captured autonomously now; compatibility must be proven against the exact working APK code and later confirmed on the physical OPPO.
+
+- timestamp: 2026-08-12T21:06:09+05:30
+  checked: pre-fix SoilProbeProtocolTest compatibility reproduction
+  found: Six tests ran and exactly the three new working-APK compatibility cases failed: complete out-of-range response acceptance, 0x7F sentinel normalization and clearing trailing packet bytes before the next callback.
+  implication: The tests reproduce three concrete parser divergences before any production change and will distinguish the compatibility fix from a no-op.
+
+- timestamp: 2026-08-12T21:10:31+05:30
+  checked: post-fix focused SoilProbeProtocolTest run
+  found: All six protocol tests pass after changing only SoilProbeProtocol.kt, including the three cases that failed before the fix.
+  implication: The parser now matches the reference callback for complete frames and sentinel bytes, and trailing bytes from one USB callback do not corrupt the next reading.
+
+- timestamp: 2026-08-12T21:14:02+05:30
+  checked: complete Android regression/static/release verification
+  found: A forced full unit run passed 12/12 tests (4 advisor, 6 protocol, 2 USB catalog); lintDebug and minified assembleRelease passed. The release APK reports ai.joita.biosoil 4.0.1, minSdk 23, targetSdk 36, verifies v1/v2/v3 with one signer, and has SHA-256 ca074c91e01a2d479f52b5149c9266b53888baf02d8935957e694e635c205f9c.
+  implication: The protocol fix is regression-tested and included in a structurally valid release artifact. Only the physical target hardware can close end-to-end verification.
+
+- timestamp: 2026-08-12T21:14:02+05:30
+  checked: final owned diff versus concurrent shared-worktree changes
+  found: This USB investigation changed only SoilProbeProtocol.kt and SoilProbeProtocolTest.kt. Concurrent edits in SoilAdvisor, ReportService, TestFlow and locale strings remain present and were not modified or reverted by this work.
+  implication: The sensor fix is isolated from the separately owned English/Hindi guidance and recommendation work.
+
 ## Resolution
 
-root_cause: The 4.0.0 redesign made an optional field profile a hard prerequisite in TestWizard, so a first-time user cannot reach the reading screen or instantiate/start UsbSoilSensorManager. Unlike the original APK's onResume enumeration, the new manager only connects after field selection, source selection and a manual Take reading tap; Home meanwhile displays a hard-coded disconnected chip. USB selection is also fragile because findDriver chooses only the first default-probed serial device and hides unsupported attached VID/PIDs.
-fix: Replaced the mandatory multi-step/profile flow with a top-level Soil Detector quick screen that defaults to USB, auto-connects, always renders eight metric tiles, saves field-free records and shares PDFs without leaving the screen; kept manual entry secondary. Reworked USB handling to enumerate all devices, prioritize recovered probe IDs, add default/CDC fallback, auto-request permission, handle attach/detach with separate receivers and display unsupported VID/PIDs. Bumped app to 4.0.1 (40001).
-verification: Locale parity, all 8 JVM tests, lintDebug, assembleDebug and minified assembleRelease passed. APK metadata and v1/v2/v3 signature verified. Physical OTG/probe detection and live values remain awaiting human hardware verification.
-files_changed: [joita-biosoil-android/app/build.gradle.kts, joita-biosoil-android/app/src/main/java/ai/joita/biosoil/sensor/UsbSoilSensorManager.kt, joita-biosoil-android/app/src/main/java/ai/joita/biosoil/ui/JoitaSoilApp.kt, joita-biosoil-android/app/src/main/java/ai/joita/biosoil/ui/TestFlow.kt, joita-biosoil-android/app/src/main/res/values/strings.xml, joita-biosoil-android/app/src/main/res/values-hi/strings.xml, joita-biosoil-android/app/src/test/java/ai/joita/biosoil/sensor/SoilProbeUsbCatalogTest.kt]
+root_cause: The UI gate was removed successfully, but JOITA's recovered USB parser is not behavior-compatible with SoilDetector 3.2.0. The working callback accepts every response of at least 19 bytes, maps data byte 0x7F to zero, and renders all eight registers. JOITA instead uses ordinary unsigned bytes and rejects the entire reading when moisture, temperature or pH falls outside an invented plausibility range. One probe sentinel/outlier therefore leaves every tile on a placeholder even though serial bytes arrived. Transport, known VID/PIDs, CH34x initialization, 9600/8N1 and blocking read callbacks match the working APK.
+fix: Restored the working callback's byte normalization/length-only parsing contract in SoilProbeProtocol, removed the incompatible all-frame plausibility rejection, and made SoilProbeFrameBuffer discard trailing bytes at each completed USB callback so CRC/residue cannot poison the next response. Added exact failing-then-passing compatibility regression tests.
+verification: Automated verification passed: the three new compatibility tests failed before the production fix and pass after it; forced full unit suite passes 12/12; lintDebug and minified assembleRelease pass; the signed release verifies under v1/v2/v3. Physical OPPO/OTG/probe verification is still required because no adb device is attached to this environment.
+files_changed: [joita-biosoil-android/app/src/main/java/ai/joita/biosoil/sensor/SoilProbeProtocol.kt, joita-biosoil-android/app/src/test/java/ai/joita/biosoil/sensor/SoilProbeProtocolTest.kt]

@@ -20,20 +20,20 @@ object SoilProbeProtocol {
             phosphorusMgKg = unsigned16(frame, 13),
             potassiumMgKg = unsigned16(frame, 15),
             fertilityMgKg = unsigned16(frame, 17),
-        ).takeIf { it.isPlausible() }
+        )
     }
 
     private fun unsigned16(bytes: ByteArray, index: Int): Int =
-        ((bytes[index].toInt() and 0xFF) shl 8) or (bytes[index + 1].toInt() and 0xFF)
+        (probeByte(bytes[index]) shl 8) or probeByte(bytes[index + 1])
 
-    private fun signed16(bytes: ByteArray, index: Int): Int =
-        (bytes[index].toInt() shl 8) or (bytes[index + 1].toInt() and 0xFF)
+    private fun signed16(bytes: ByteArray, index: Int): Int {
+        val raw = unsigned16(bytes, index)
+        return if (raw and 0x8000 == 0) raw else raw - 0x1_0000
+    }
 
-    private fun SoilReading.isPlausible(): Boolean =
-        moisturePercent in 0.0..100.0 &&
-            temperatureCelsius in -50.0..100.0 &&
-            ph in 0.0..14.0 &&
-            ecUsCm in 0..65_535
+    /** SoilDetector 3.2.0 treats the probe's 0x7F sentinel byte as zero. */
+    private fun probeByte(byte: Byte): Int =
+        (byte.toInt() and 0xFF).let { if (it == 0x7F) 0 else it }
 }
 
 class SoilProbeFrameBuffer {
@@ -41,18 +41,15 @@ class SoilProbeFrameBuffer {
 
     @Synchronized
     fun append(bytes: ByteArray): List<SoilReading> {
-        bytes.forEach(buffer::add)
-        val readings = mutableListOf<SoilReading>()
-        while (buffer.size >= SoilProbeProtocol.FRAME_LENGTH) {
-            val candidate = ByteArray(SoilProbeProtocol.FRAME_LENGTH) { buffer[it] }
-            val reading = SoilProbeProtocol.parseFrame(candidate)
-            if (reading != null) {
-                readings += reading
-                repeat(SoilProbeProtocol.FRAME_LENGTH) { buffer.removeAt(0) }
-            } else {
-                buffer.removeAt(0)
-            }
+        if (bytes.size >= SoilProbeProtocol.FRAME_LENGTH) {
+            buffer.clear()
+            return listOfNotNull(SoilProbeProtocol.parseFrame(bytes))
         }
-        return readings
+        bytes.forEach(buffer::add)
+        if (buffer.size < SoilProbeProtocol.FRAME_LENGTH) return emptyList()
+
+        val frame = ByteArray(SoilProbeProtocol.FRAME_LENGTH) { buffer[it] }
+        buffer.clear()
+        return listOfNotNull(SoilProbeProtocol.parseFrame(frame))
     }
 }

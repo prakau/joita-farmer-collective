@@ -3,6 +3,8 @@ package ai.joita.biosoil.domain
 import ai.joita.biosoil.model.SoilReading
 import ai.joita.biosoil.model.SoilStatus
 import ai.joita.biosoil.model.ParameterStatus
+import ai.joita.biosoil.model.MeasurementConfidence
+import ai.joita.biosoil.model.ReadingSource
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -25,7 +27,7 @@ class SoilAdvisorTest {
         )
         assertEquals(30, result.score)
         assertEquals(SoilStatus.URGENT, result.status)
-        assertTrue("irrigate" in result.immediateActions)
+        assertTrue("prepare_moist_soil" in result.immediateActions)
         assertTrue("alkaline_ph" in result.immediateActions)
         assertTrue("high_salinity" in result.immediateActions)
         assertTrue("low_nutrients" in result.immediateActions)
@@ -48,5 +50,43 @@ class SoilAdvisorTest {
         )
         assertEquals(ParameterStatus.GOOD, result.assessments.first { it.key == "ec" }.status)
         assertEquals(ParameterStatus.GOOD, result.assessments.first { it.key == "fertility" }.status)
+    }
+
+    @Test
+    fun drySoil_alwaysRequiresRetestRegardlessOfSampleCount() {
+        val reading = SoilReading(7.0, 29.0, 20, 6.7, 20, 3, 18, 30)
+
+        assertEquals(
+            MeasurementConfidence.RETEST_REQUIRED,
+            SoilAdvisor.measurementConfidence(reading, ReadingSource.USB, sampleCount = 5),
+        )
+    }
+
+    @Test
+    fun averagedUsbReading_isStrongerFieldIndicator() {
+        val reading = SoilReading(38.0, 28.0, 650, 6.8, 180, 32, 190, 510)
+
+        assertEquals(
+            MeasurementConfidence.FIELD_INDICATOR,
+            SoilAdvisor.measurementConfidence(reading, ReadingSource.USB, sampleCount = 3),
+        )
+        assertEquals(
+            MeasurementConfidence.PRELIMINARY,
+            SoilAdvisor.measurementConfidence(reading, ReadingSource.USB, sampleCount = 2),
+        )
+    }
+
+    @Test
+    fun sampleAndManualSources_areClearlyDistinguished() {
+        val reading = SoilReading(38.0, 28.0, 650, 6.8, 180, 32, 190, 510)
+
+        assertEquals(
+            MeasurementConfidence.SAMPLE_DATA,
+            SoilAdvisor.measurementConfidence(reading, ReadingSource.SAMPLE, sampleCount = 5),
+        )
+        assertEquals(
+            MeasurementConfidence.MANUAL_ENTRY,
+            SoilAdvisor.measurementConfidence(reading, ReadingSource.MANUAL, sampleCount = 1),
+        )
     }
 }

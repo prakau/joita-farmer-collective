@@ -35,6 +35,8 @@ import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.LocationOn
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material.icons.rounded.PictureAsPdf
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Usb
@@ -61,6 +63,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -78,8 +81,10 @@ import androidx.core.os.LocaleListCompat
 import ai.joita.biosoil.R
 import ai.joita.biosoil.domain.SoilAdvisor
 import ai.joita.biosoil.model.FieldProfile
+import ai.joita.biosoil.model.MeasurementConfidence
 import ai.joita.biosoil.model.ParameterStatus
 import ai.joita.biosoil.model.ReadingSource
+import ai.joita.biosoil.model.ReportIdentity
 import ai.joita.biosoil.model.SoilReading
 import ai.joita.biosoil.model.SoilStatus
 import ai.joita.biosoil.model.SoilTestRecord
@@ -113,10 +118,15 @@ internal fun TestWizard(
     var manualReading by remember { mutableStateOf<SoilReading?>(null) }
     var usbSamples by remember { mutableStateOf<List<SoilReading>>(emptyList()) }
     var sourceNote by remember { mutableStateOf("") }
+    var farmerName by rememberSaveable { mutableStateOf("") }
+    var fatherName by rememberSaveable { mutableStateOf("") }
+    var village by rememberSaveable { mutableStateOf("") }
+    var mobileNumber by rememberSaveable { mutableStateOf("") }
     var savedTest by remember { mutableStateOf<SoilTestRecord?>(null) }
     var pendingDownload by remember { mutableStateOf<File?>(null) }
     var sensorState by remember { mutableStateOf<SensorState>(SensorState.NoDevice) }
     var guideVisible by remember { mutableStateOf(false) }
+    var reportDetailsVisible by remember { mutableStateOf(false) }
     val systemLanguage = ConfigurationCompat.getLocales(LocalConfiguration.current)[0]?.language ?: "en"
     val currentLanguage = AppCompatDelegate.getApplicationLocales()[0]?.language
         ?: systemLanguage
@@ -156,33 +166,28 @@ internal fun TestWizard(
         ReadingSource.SAMPLE -> SampleReading
     }
 
-    fun saveReading(share: Boolean) {
-        val actualReading = reading ?: return
-        val test = savedTest?.takeIf { it.source == source && it.reading == actualReading } ?: run {
-            val advisory = SoilAdvisor.assess(actualReading)
-            SoilTestRecord(
-                fieldId = null,
-                fieldLabel = quickTestLabel,
-                crop = "",
-                source = source,
-                reading = actualReading,
-                score = advisory.score,
-                status = advisory.status,
-                sourceNote = sourceNote,
-            ).also {
-                onSaved(it)
-                savedTest = it
-            }
-        }
-        if (share) {
-            ReportService.sharePdf(context, ReportService.createPdf(context, test), test)
-        }
-    }
+    val reportIdentity = ReportIdentity(
+        farmerName = farmerName.trim(),
+        fatherName = fatherName.trim(),
+        village = village.trim(),
+        mobileNumber = mobileNumber.trim(),
+    )
 
-    fun downloadReading() {
-        val actualReading = reading ?: return
+    fun currentSampleCount() = if (source == ReadingSource.USB) usbSamples.size.coerceAtLeast(1) else 1
+
+    fun currentTest(): SoilTestRecord? {
+        val actualReading = reading ?: return null
+        val sampleCount = currentSampleCount()
+        val reusable = savedTest?.takeIf {
+            it.source == source &&
+                it.reading == actualReading &&
+                it.sourceNote == sourceNote &&
+                it.reportIdentity == reportIdentity &&
+                it.sampleCount == sampleCount
+        }
+        if (reusable != null) return reusable
         val advisory = SoilAdvisor.assess(actualReading)
-        val test = savedTest?.takeIf { it.source == source && it.reading == actualReading } ?: SoilTestRecord(
+        return SoilTestRecord(
             fieldId = null,
             fieldLabel = quickTestLabel,
             crop = "",
@@ -191,10 +196,23 @@ internal fun TestWizard(
             score = advisory.score,
             status = advisory.status,
             sourceNote = sourceNote,
+            reportIdentity = reportIdentity,
+            sampleCount = sampleCount,
         ).also {
             onSaved(it)
             savedTest = it
         }
+    }
+
+    fun saveReading(share: Boolean) {
+        val test = currentTest() ?: return
+        if (share) {
+            ReportService.sharePdf(context, ReportService.createPdf(context, test), test)
+        }
+    }
+
+    fun downloadReading() {
+        val test = currentTest() ?: return
         pendingDownload = ReportService.createPdf(context, test)
         downloadLauncher.launch("JOITA-Soil-Saathi-${test.id.take(8)}.pdf")
     }
@@ -270,6 +288,8 @@ internal fun TestWizard(
                 if (it == ReadingSource.USB) sensorManager.connect()
             },
             reading = reading,
+            reportIdentity = reportIdentity,
+            onEditReportIdentity = { reportDetailsVisible = true },
             sourceNote = sourceNote,
             onSourceNote = {
                 sourceNote = it
@@ -293,6 +313,20 @@ internal fun TestWizard(
         )
     }
     if (guideVisible) SensorGuideDialog(onDismiss = { guideVisible = false })
+    if (reportDetailsVisible) {
+        ReportDetailsDialog(
+            identity = reportIdentity,
+            onDismiss = { reportDetailsVisible = false },
+            onSave = { updated ->
+                farmerName = updated.farmerName
+                fatherName = updated.fatherName
+                village = updated.village
+                mobileNumber = updated.mobileNumber
+                savedTest = null
+                reportDetailsVisible = false
+            },
+        )
+    }
 }
 
 @Composable
@@ -300,6 +334,8 @@ private fun QuickReadingScreen(
     source: ReadingSource,
     onSource: (ReadingSource) -> Unit,
     reading: SoilReading?,
+    reportIdentity: ReportIdentity,
+    onEditReportIdentity: () -> Unit,
     sourceNote: String,
     onSourceNote: (String) -> Unit,
     onManualReading: (SoilReading) -> Unit,
@@ -314,12 +350,17 @@ private fun QuickReadingScreen(
     ) {
         Text(stringResource(R.string.quick_test_body), color = InkMuted)
         SourceBadge(source)
+        ReportIdentityCard(reportIdentity, onEditReportIdentity)
         when (source) {
             ReadingSource.MANUAL -> {
                 TextButton(onClick = { onSource(ReadingSource.USB) }) { Text(stringResource(R.string.use_usb_sensor)) }
                 ManualReadingForm(sourceNote, onSourceNote, onManualReading)
+                reading?.let { LiveFarmerAdvice(it, ReadingSource.MANUAL, 1) }
             }
-            ReadingSource.SAMPLE -> MetricGrid(SampleReading)
+            ReadingSource.SAMPLE -> {
+                MetricGrid(SampleReading)
+                LiveFarmerAdvice(SampleReading, ReadingSource.SAMPLE, 1)
+            }
             ReadingSource.USB -> {
                 val stateIsError = sensorState is SensorState.Error || sensorState is SensorState.UnsupportedDevice
                 Text(sensorStateText(sensorState), color = if (stateIsError) MaterialTheme.colorScheme.error else InkMuted)
@@ -340,7 +381,7 @@ private fun QuickReadingScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = JoitaGreenDark,
                     )
-                    LiveFarmerAdvice(reading)
+                    LiveFarmerAdvice(reading, ReadingSource.USB, sampleCount)
                     OutlinedButton(onClick = onSensorAction, modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.new_spot_reset))
                     }
@@ -349,6 +390,119 @@ private fun QuickReadingScreen(
             }
         }
     }
+}
+
+@Composable
+private fun ReportIdentityCard(
+    identity: ReportIdentity,
+    onEdit: () -> Unit,
+) {
+    val secondaryDetails = listOfNotNull(
+        identity.fatherName.takeIf { it.isNotBlank() }?.let { "${stringResource(R.string.report_father_name)}: $it" },
+        identity.village.takeIf { it.isNotBlank() },
+        identity.mobileNumber.takeIf { it.isNotBlank() },
+    ).joinToString(" • ")
+    Card(
+        colors = CardDefaults.cardColors(containerColor = LeafLight),
+        shape = MaterialTheme.shapes.extraLarge,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(
+                if (identity.isEmpty) Icons.Rounded.PersonAdd else Icons.Rounded.Edit,
+                contentDescription = null,
+                tint = JoitaGreenDark,
+                modifier = Modifier.size(28.dp),
+            )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(stringResource(R.string.report_farmer_details), fontWeight = FontWeight.Bold, color = JoitaGreenDark)
+                if (identity.isEmpty) {
+                    Text(stringResource(R.string.report_details_optional_body), style = MaterialTheme.typography.bodySmall, color = InkMuted)
+                } else {
+                    Text(identity.farmerName.ifBlank { stringResource(R.string.farmer_not_added) }, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        secondaryDetails,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkMuted,
+                    )
+                }
+            }
+            TextButton(onClick = onEdit) {
+                Text(stringResource(if (identity.isEmpty) R.string.add_details else R.string.edit_details))
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReportDetailsDialog(
+    identity: ReportIdentity,
+    onDismiss: () -> Unit,
+    onSave: (ReportIdentity) -> Unit,
+) {
+    var farmerName by rememberSaveable(identity) { mutableStateOf(identity.farmerName) }
+    var fatherName by rememberSaveable(identity) { mutableStateOf(identity.fatherName) }
+    var village by rememberSaveable(identity) { mutableStateOf(identity.village) }
+    var mobileNumber by rememberSaveable(identity) { mutableStateOf(identity.mobileNumber) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.report_farmer_details)) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()).imePadding(),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text(stringResource(R.string.report_details_not_required), color = InkMuted)
+                OutlinedTextField(
+                    value = farmerName,
+                    onValueChange = { farmerName = it.take(80) },
+                    label = { Text(stringResource(R.string.farmer_name_optional)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = fatherName,
+                    onValueChange = { fatherName = it.take(80) },
+                    label = { Text(stringResource(R.string.father_name_optional)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = village,
+                    onValueChange = { village = it.take(80) },
+                    label = { Text(stringResource(R.string.village_optional)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = mobileNumber,
+                    onValueChange = { mobileNumber = it.filter { character -> character.isDigit() || character in "+ -" }.take(18) },
+                    label = { Text(stringResource(R.string.mobile_optional)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onSave(
+                        ReportIdentity(
+                            farmerName = farmerName.trim(),
+                            fatherName = fatherName.trim(),
+                            village = village.trim(),
+                            mobileNumber = mobileNumber.trim(),
+                        ),
+                    )
+                },
+            ) { Text(stringResource(R.string.save_details)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.skip_for_now)) } },
+    )
 }
 
 @Composable
@@ -770,8 +924,15 @@ private data class MetricDisplay(
 )
 
 @Composable
-private fun LiveFarmerAdvice(reading: SoilReading) {
+private fun LiveFarmerAdvice(
+    reading: SoilReading,
+    source: ReadingSource,
+    sampleCount: Int,
+) {
     val advisory = remember(reading) { SoilAdvisor.assess(reading) }
+    val confidence = remember(reading, source, sampleCount) {
+        SoilAdvisor.measurementConfidence(reading, source, sampleCount)
+    }
     Card(
         colors = CardDefaults.cardColors(
             containerColor = if (reading.moisturePercent < 15.0) Color(0xFFFFE2A8) else LeafLight,
@@ -779,14 +940,22 @@ private fun LiveFarmerAdvice(reading: SoilReading) {
         shape = MaterialTheme.shapes.extraLarge,
     ) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(stringResource(R.string.farmer_advice_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.smart_advisory_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.smart_advisory_on_device), style = MaterialTheme.typography.labelMedium, color = InkMuted)
             Text(
                 stringResource(R.string.quick_indicator_format, advisory.score, statusLabel(advisory.status)),
                 color = JoitaGreenDark,
                 fontWeight = FontWeight.SemiBold,
             )
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.82f))) {
+                Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(stringResource(R.string.measurement_quality), style = MaterialTheme.typography.labelMedium, color = InkMuted)
+                    Text(confidenceTitle(confidence), fontWeight = FontWeight.Bold, color = confidenceColor(confidence))
+                    Text(confidenceBody(confidence), style = MaterialTheme.typography.bodySmall)
+                }
+            }
             advisory.immediateActions.forEach { action ->
-                Text("• ${adviceLabel(action)}", style = MaterialTheme.typography.bodyMedium)
+                Text("• ${adviceLabel(action)}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
             }
             HorizontalDivider(color = JoitaGreen.copy(alpha = 0.2f))
             Text(stringResource(R.string.advice_retest_points), style = MaterialTheme.typography.bodySmall, color = InkMuted)
@@ -863,6 +1032,35 @@ private fun parameterStatusColor(status: ParameterStatus): Color = when (status)
     ParameterStatus.GOOD -> JoitaGreenDark
     ParameterStatus.LOW -> InfoBlue
     ParameterStatus.HIGH -> Color(0xFFB3261E)
+}
+
+@Composable
+private fun confidenceTitle(confidence: MeasurementConfidence): String = stringResource(
+    when (confidence) {
+        MeasurementConfidence.RETEST_REQUIRED -> R.string.confidence_retest_title
+        MeasurementConfidence.PRELIMINARY -> R.string.confidence_preliminary_title
+        MeasurementConfidence.FIELD_INDICATOR -> R.string.confidence_field_title
+        MeasurementConfidence.MANUAL_ENTRY -> R.string.confidence_manual_title
+        MeasurementConfidence.SAMPLE_DATA -> R.string.confidence_sample_title
+    },
+)
+
+@Composable
+private fun confidenceBody(confidence: MeasurementConfidence): String = stringResource(
+    when (confidence) {
+        MeasurementConfidence.RETEST_REQUIRED -> R.string.confidence_retest_body
+        MeasurementConfidence.PRELIMINARY -> R.string.confidence_preliminary_body
+        MeasurementConfidence.FIELD_INDICATOR -> R.string.confidence_field_body
+        MeasurementConfidence.MANUAL_ENTRY -> R.string.confidence_manual_body
+        MeasurementConfidence.SAMPLE_DATA -> R.string.confidence_sample_body
+    },
+)
+
+private fun confidenceColor(confidence: MeasurementConfidence): Color = when (confidence) {
+    MeasurementConfidence.RETEST_REQUIRED -> Color(0xFFB3261E)
+    MeasurementConfidence.PRELIMINARY, MeasurementConfidence.MANUAL_ENTRY -> SoilBrown
+    MeasurementConfidence.FIELD_INDICATOR -> JoitaGreenDark
+    MeasurementConfidence.SAMPLE_DATA -> InfoBlue
 }
 
 @Composable

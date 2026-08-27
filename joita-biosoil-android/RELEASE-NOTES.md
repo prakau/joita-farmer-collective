@@ -1,4 +1,19 @@
-# Release 4.1.0 — Reliable Sensor + Farmer Advice
+# Release 4.2.0 - Exhibition Report + Smart Advisory
+
+- Replaces the weak single-page PDF with a structured field-intelligence report using measured text heights, consistent cards, automatic page breaks, repeating headers, footers and page numbers.
+- Adds optional farmer name, father name, village and mobile number directly on the reading screen. These details never block or delay the sensor.
+- Adds farmer details to local history and safely migrates existing 4.x records without deleting them.
+- Adds a clear decision-readiness assessment: Retest required, Preliminary, Stronger field indication, Manual entry or Demonstration only.
+- Separates eight observed indicators, parameter status, priority actions, recommended retesting and important decision limits.
+- Adds a more intuitive JOITA Smart Advisory card in English and Hindi while remaining honest that guidance is generated on-device and is not a laboratory prescription.
+- Removes duplicate dry-soil advice and prioritises retesting before irrigation or fertiliser decisions.
+
+Release SHA-256:
+
+- APK: `7156f15407cb384531f249f79b63f803d7b5aa008ea03e197cd576eace1c4944`
+- AAB: `289f0f0172cd4933f1e5bd9158bc861d3676a00155ffef23f2c648bcf4ce3de9`
+
+## Release 4.1.0 — Reliable Sensor + Farmer Advice
 
 - Restores the exact working SoilDetector 3.2.0 response behavior: the probe’s `0x7F` sentinel byte becomes zero and one unusual register no longer discards all eight measurements.
 - Adds regression tests derived from the working APK’s receive callback.

@@ -43,6 +43,16 @@ data class SoilReading(
     val fertilityMgKg: Int,
 )
 
+data class ReportIdentity(
+    val farmerName: String = "",
+    val fatherName: String = "",
+    val village: String = "",
+    val mobileNumber: String = "",
+) {
+    val isEmpty: Boolean
+        get() = farmerName.isBlank() && fatherName.isBlank() && village.isBlank() && mobileNumber.isBlank()
+}
+
 data class SoilTestRecord(
     val id: String = UUID.randomUUID().toString(),
     val fieldId: Long?,
@@ -57,12 +67,16 @@ data class SoilTestRecord(
     val accuracyMeters: Float? = null,
     val photoUri: String? = null,
     val sourceNote: String = "",
+    val reportIdentity: ReportIdentity = ReportIdentity(),
+    val sampleCount: Int = 1,
     val createdAtEpochMs: Long = System.currentTimeMillis(),
 )
 
 enum class SoilStatus { GOOD, NEEDS_ATTENTION, URGENT }
 
 enum class ParameterStatus { GOOD, LOW, HIGH }
+
+enum class MeasurementConfidence { RETEST_REQUIRED, PRELIMINARY, FIELD_INDICATOR, MANUAL_ENTRY, SAMPLE_DATA }
 
 data class ParameterAssessment(
     val key: String,

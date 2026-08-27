@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteOpenHelper
 import ai.joita.biosoil.model.FieldDraft
 import ai.joita.biosoil.model.FieldProfile
 import ai.joita.biosoil.model.ReadingSource
+import ai.joita.biosoil.model.ReportIdentity
 import ai.joita.biosoil.model.SoilReading
 import ai.joita.biosoil.model.SoilStatus
 import ai.joita.biosoil.model.SoilTestRecord
@@ -121,6 +122,11 @@ class SoilRepository(context: Context) {
                 test.accuracyMeters?.let { put("accuracy_m", it) }
                 test.photoUri?.let { put("photo_uri", it) }
                 put("source_note", test.sourceNote)
+                put("report_farmer_name", test.reportIdentity.farmerName.trim())
+                put("report_father_name", test.reportIdentity.fatherName.trim())
+                put("report_village", test.reportIdentity.village.trim())
+                put("report_mobile", test.reportIdentity.mobileNumber.trim())
+                put("sample_count", test.sampleCount.coerceAtLeast(1))
                 put("created_at", test.createdAtEpochMs)
             },
             SQLiteDatabase.CONFLICT_REPLACE,
@@ -165,6 +171,13 @@ class SoilRepository(context: Context) {
                             accuracyMeters = if (cursor.isNull(index("accuracy_m"))) null else cursor.getFloat(index("accuracy_m")),
                             photoUri = if (cursor.isNull(index("photo_uri"))) null else cursor.getString(index("photo_uri")),
                             sourceNote = cursor.getString(index("source_note")),
+                            reportIdentity = ReportIdentity(
+                                farmerName = cursor.getString(index("report_farmer_name")),
+                                fatherName = cursor.getString(index("report_father_name")),
+                                village = cursor.getString(index("report_village")),
+                                mobileNumber = cursor.getString(index("report_mobile")),
+                            ),
+                            sampleCount = cursor.getInt(index("sample_count")).coerceAtLeast(1),
                             createdAtEpochMs = cursor.getLong(index("created_at")),
                         ),
                     )
@@ -188,7 +201,7 @@ class SoilRepository(context: Context) {
     }
 }
 
-private class SoilDatabaseHelper(context: Context) : SQLiteOpenHelper(context, "joita_soil.db", null, 1) {
+private class SoilDatabaseHelper(context: Context) : SQLiteOpenHelper(context, "joita_soil.db", null, 2) {
     override fun onCreate(database: SQLiteDatabase) {
         database.execSQL(
             """
@@ -240,6 +253,11 @@ private class SoilDatabaseHelper(context: Context) : SQLiteOpenHelper(context, "
                 accuracy_m REAL,
                 photo_uri TEXT,
                 source_note TEXT NOT NULL DEFAULT '',
+                report_farmer_name TEXT NOT NULL DEFAULT '',
+                report_father_name TEXT NOT NULL DEFAULT '',
+                report_village TEXT NOT NULL DEFAULT '',
+                report_mobile TEXT NOT NULL DEFAULT '',
+                sample_count INTEGER NOT NULL DEFAULT 1,
                 created_at INTEGER NOT NULL
             )
             """.trimIndent(),
@@ -251,5 +269,13 @@ private class SoilDatabaseHelper(context: Context) : SQLiteOpenHelper(context, "
         database.setForeignKeyConstraintsEnabled(true)
     }
 
-    override fun onUpgrade(database: SQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+    override fun onUpgrade(database: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        if (oldVersion < 2) {
+            database.execSQL("ALTER TABLE soil_tests ADD COLUMN report_farmer_name TEXT NOT NULL DEFAULT ''")
+            database.execSQL("ALTER TABLE soil_tests ADD COLUMN report_father_name TEXT NOT NULL DEFAULT ''")
+            database.execSQL("ALTER TABLE soil_tests ADD COLUMN report_village TEXT NOT NULL DEFAULT ''")
+            database.execSQL("ALTER TABLE soil_tests ADD COLUMN report_mobile TEXT NOT NULL DEFAULT ''")
+            database.execSQL("ALTER TABLE soil_tests ADD COLUMN sample_count INTEGER NOT NULL DEFAULT 1")
+        }
+    }
 }

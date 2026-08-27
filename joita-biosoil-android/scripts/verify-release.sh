@@ -2,8 +2,8 @@
 set -euo pipefail
 
 project_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-apk="$project_dir/release/JOITA-BioSeed-AI-Soil-Saathi-4.1.0.apk"
-expected_apk_sha="26ee649622fb2d8615756cb4d81c531d62ff06f4510c48f3ff225be0550b2632"
+apk="$project_dir/release/JOITA-BioSeed-AI-Soil-Saathi-4.2.0.apk"
+expected_apk_sha="7156f15407cb384531f249f79b63f803d7b5aa008ea03e197cd576eace1c4944"
 expected_logo_sha="aaa21d2752a5e434c0101a3fb65202c42525f855fe6ef441ca315d8b0f34125b"
 
 sdk_root="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/opt/homebrew/share/android-commandlinetools}}"
@@ -18,7 +18,7 @@ actual_apk_sha="$(shasum -a 256 "$apk" | awk '{print $1}')"
 [[ "$actual_apk_sha" == "$expected_apk_sha" ]] || { echo "APK SHA-256 does not match the release manifest" >&2; exit 1; }
 
 badging="$($aapt2 dump badging "$apk")"
-grep -q "package: name='ai.joita.biosoil' versionCode='40100' versionName='4.1.0'" <<< "$badging"
+grep -q "package: name='ai.joita.biosoil' versionCode='40200' versionName='4.2.0'" <<< "$badging"
 grep -q "minSdkVersion:'23'" <<< "$badging"
 grep -q "targetSdkVersion:'36'" <<< "$badging"
 grep -q "application-label-hi:'JOITA बायोसीड AI – मिट्टी साथी'" <<< "$badging"

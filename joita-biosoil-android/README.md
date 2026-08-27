@@ -5,22 +5,22 @@ A new, offline-first Android soil companion made by **JOITA BIOSEED AI** for Ind
 ## What is included
 
 - A completely new Jetpack Compose Material 3 interface using JOITA green, cream, turmeric and soil colours.
-- Direct-to-reading launch with no required farmer or field form.
+- Direct-to-reading launch with no required farmer or field form, plus optional farmer, father, village and mobile details for the report.
 - USB OTG soil-probe support at 9600 baud with complete-frame validation for moisture, temperature, EC, pH, nitrogen, phosphorus, potassium and fertility.
 - Automatic USB discovery, permission request, reconnect on attachment, and visible VID/PID diagnostics for unsupported probes.
 - Manual laboratory/meter readings and permanently labelled demonstration readings.
 - One-screen measurement, Save and Share workflow with manual entry as a fallback.
 - Offline SQLite history—no login, network or cloud account is required.
 - India-focused sampling, OTG and agronomy guidance in English and Hindi.
-- Local soil-health score, parameter status and cautious next actions with a laboratory/agronomist disclaimer.
-- Branded PDF reports and Android share-sheet support.
+- On-device smart advisory with measurement-quality warnings, parameter status and cautious next actions with a laboratory/agronomist disclaimer.
+- Uniform, multi-page branded PDF reports with automatic text layout, farmer identity, decision readiness and Android share-sheet support.
 - Optional phone GPS, camera and USB hardware; all records remain usable without USB.
 - Optional USB, camera and location features so installation is not restricted to phones with every sensor.
 
 ## Android compatibility
 
 - Package: `ai.joita.biosoil`
-- Version: `4.1.0` (`40100`)
+- Version: `4.2.0` (`40200`)
 - Minimum: Android 6.0 / API 23
 - Target and compile SDK: Android 16 / API 36
 - One universal APK containing ARM64, ARMv7, x86 and x86-64 support.
@@ -29,13 +29,13 @@ The new JOITA package installs alongside the supplied SoilDetector APK. It canno
 
 ## Release files
 
-- `release/JOITA-BioSeed-AI-Soil-Saathi-4.1.0.apk` — direct installation on Android phones.
-- `release/JOITA-BioSeed-AI-Soil-Saathi-4.1.0.aab` — Google Play submission bundle.
+- `release/JOITA-BioSeed-AI-Soil-Saathi-4.2.0.apk` — direct installation on Android phones.
+- `release/JOITA-BioSeed-AI-Soil-Saathi-4.2.0.aab` — Google Play submission bundle.
 - `release/SHA256SUMS.txt` — file integrity hashes.
 
 ## Installation
 
-Transfer the APK to the phone, open it from Android’s Files app or another trusted transfer app, allow that app to install unknown apps if prompted, and tap **Install**. Version 4.1.0 updates an existing JOITA 4.0.x installation. The release folder includes `INSTALL.txt` with the same steps. For a development device with USB debugging enabled, use `adb install -r release/JOITA-BioSeed-AI-Soil-Saathi-4.1.0.apk`.
+Transfer the APK to the phone, open it from Android’s Files app or another trusted transfer app, allow that app to install unknown apps if prompted, and tap **Install**. Version 4.2.0 updates an existing JOITA 4.x installation. The release folder includes `INSTALL.txt` with the same steps. For a development device with USB debugging enabled, use `adb install -r release/JOITA-BioSeed-AI-Soil-Saathi-4.2.0.apk`.
 
 ## Languages and offline behavior
 
@@ -47,7 +47,7 @@ Android displays the standard USB-device consent prompt automatically when a com
 
 ## Signing and future updates
 
-The release APK and AAB use the dedicated private JOITA 4096-bit RSA signing key. Preserve `release-signing/joita-biosoil-release.jks`, its private credentials file and `keystore.properties` in at least two secure backups. A future APK with a higher version code, the same package and the same key can update version 4.1.0 without losing local app records.
+The release APK and AAB use the dedicated private JOITA 4096-bit RSA signing key. Preserve `release-signing/joita-biosoil-release.jks`, its private credentials file and `keystore.properties` in at least two secure backups. A future APK with a higher version code, the same package and the same key can update version 4.2.0 without losing local app records.
 
 ## Build
 
@@ -61,7 +61,7 @@ Release builds require the ignored `keystore.properties` and JOITA private keyst
 
 ## USB sensor support
 
-The protocol is based on the supplied SoilDetector 3.2.0 application. It sends an 8-byte poll command and accepts only a complete, plausible 19-byte response before displaying values. The original known CH34x-compatible USB IDs are included:
+The protocol is based on the supplied SoilDetector 3.2.0 application. It sends an 8-byte poll command, accepts a complete 19-byte response and normalises individual sentinel registers without discarding the other measurements. The original known CH34x-compatible USB IDs are included:
 
 - Vendor `6790`, product `29987`
 - Vendor `6790`, product `21795`

@@ -1,13 +1,27 @@
 package ai.joita.biosoil.domain
 
 import ai.joita.biosoil.model.AdvisoryResult
+import ai.joita.biosoil.model.MeasurementConfidence
 import ai.joita.biosoil.model.ParameterAssessment
 import ai.joita.biosoil.model.ParameterStatus
+import ai.joita.biosoil.model.ReadingSource
 import ai.joita.biosoil.model.SoilReading
 import ai.joita.biosoil.model.SoilStatus
 import kotlin.math.roundToInt
 
 object SoilAdvisor {
+    fun measurementConfidence(
+        reading: SoilReading,
+        source: ReadingSource,
+        sampleCount: Int,
+    ): MeasurementConfidence = when {
+        source == ReadingSource.SAMPLE -> MeasurementConfidence.SAMPLE_DATA
+        reading.moisturePercent < 15.0 -> MeasurementConfidence.RETEST_REQUIRED
+        source == ReadingSource.MANUAL -> MeasurementConfidence.MANUAL_ENTRY
+        sampleCount >= 3 -> MeasurementConfidence.FIELD_INDICATOR
+        else -> MeasurementConfidence.PRELIMINARY
+    }
+
     fun assess(reading: SoilReading): AdvisoryResult {
         val assessments = listOf(
             assess("moisture", reading.moisturePercent, 20.0, 60.0, "%"),
@@ -34,8 +48,11 @@ object SoilAdvisor {
         }
 
         val immediate = buildList {
-            if (reading.moisturePercent < 15.0) add("prepare_moist_soil")
-            if (assessments.first { it.key == "moisture" }.status == ParameterStatus.LOW) add("irrigate")
+            if (reading.moisturePercent < 15.0) {
+                add("prepare_moist_soil")
+            } else if (assessments.first { it.key == "moisture" }.status == ParameterStatus.LOW) {
+                add("irrigate")
+            }
             if (assessments.first { it.key == "moisture" }.status == ParameterStatus.HIGH) add("improve_drainage")
             when (assessments.first { it.key == "ph" }.status) {
                 ParameterStatus.LOW -> add("acidic_ph")

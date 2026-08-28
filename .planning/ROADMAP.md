@@ -173,6 +173,6 @@ Plans:
 
 Plans:
 - [x] 08-01-PLAN.md — Typed local state, bilingual shell, search, responsive system, and dashboard
-- [ ] 08-02-PLAN.md — Farmer, plot, Baseline/Quick Visit, sensor, evidence, meeting, demonstration, sample, and follow-up
+- [x] 08-02-PLAN.md — Farmer, plot, Baseline/Quick Visit, sensor, evidence, meeting, demonstration, sample, and follow-up
 - [ ] 08-03-PLAN.md — Kisan Saathi, FarmAssist, batch, documents, QR, finance, and traceability
 - [ ] 08-04-PLAN.md — Reports, committee/presentation modes, and automated browser smoke coverage

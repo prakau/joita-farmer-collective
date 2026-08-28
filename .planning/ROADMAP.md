@@ -147,3 +147,32 @@ Plans:
 - [x] 07-01: Bootstrap Android foundation, offline domain storage, recovered USB protocol and unit tests
 - [x] 07-02: Build the complete English/Hindi JOITA field interface, mobile integrations and offline reports
 - [x] 07-03: Generate JOITA release signing, build APK/AAB, verify and document handoff
+
+### Phase 8: Build JOITA Climate FieldOS reporting platform
+
+**Goal:** Deliver a polished mobile-first, zero-dependency JOITA Climate FieldOS prototype linking farmers, fields, sensor observations, interventions, evidence, expenditure, and grant reporting in one honest offline-capable committee-ready experience.
+**Requirements**: [FIELDOS-01, FIELDOS-02, FIELDOS-03, FIELDOS-04, FIELDOS-05, FIELDOS-06, FIELDOS-07, FIELDOS-08]
+**Depends on:** Phase 7
+**Plans:** 4 plans
+
+**Phase 8 Requirements:**
+- **FIELDOS-01**: Navigate a branded role-aware responsive shell, switch English/Hindi, search globally, and access all first-screen actions.
+- **FIELDOS-02**: Inspect a state-derived dashboard with targets, KPIs, map, alerts, milestones, evidence completion, and offline queue.
+- **FIELDOS-03**: Persist farmer, plot, Baseline Visit, and seven-step Quick Visit records locally with consent and provenance.
+- **FIELDOS-04**: Create linked Soil Sathi, evidence, demonstration, meeting/training, sample/lab, feedback, and follow-up records with honest capture states.
+- **FIELDOS-05**: Use Kisan Saathi, FarmAssist, BioSynth batch, document, attendance, and prototype QR views against shared state.
+- **FIELDOS-06**: Reconcile fixed budgets, expense/cash proof, and batch/sample/invoice-to-activity traces without fabricated links.
+- **FIELDOS-07**: Present committee, presentation, and grant-report previews without unsupported claims, fake exports, or statutory certification.
+- **FIELDOS-08**: Automated real-browser smoke coverage verifies navigation, forms, reload persistence, offline queue, traceability, committee restrictions, and 320px overflow.
+
+**Success Criteria** (what must be TRUE):
+  1. A field user completes every primary action offline and recovers saved work after reload.
+  2. Management inspects Kisan Saathis, advisories, batches, trainings, documents, evidence, fixed grant budget, and linked traces.
+  3. Committee/report modes show current data and explicit evidence/export limitations without unsupported claims.
+  4. The zero-dependency build and repeated real-browser smoke suite pass, including mobile overflow and role-control assertions.
+
+Plans:
+- [x] 08-01-PLAN.md — Typed local state, bilingual shell, search, responsive system, and dashboard
+- [ ] 08-02-PLAN.md — Farmer, plot, Baseline/Quick Visit, sensor, evidence, meeting, demonstration, sample, and follow-up
+- [ ] 08-03-PLAN.md — Kisan Saathi, FarmAssist, batch, documents, QR, finance, and traceability
+- [ ] 08-04-PLAN.md — Reports, committee/presentation modes, and automated browser smoke coverage

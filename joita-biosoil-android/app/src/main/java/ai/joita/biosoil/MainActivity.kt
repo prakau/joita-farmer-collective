@@ -3,7 +3,7 @@ package ai.joita.biosoil
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
-import ai.joita.biosoil.ui.JoitaSoilApp
+import ai.joita.biosoil.collective.CollectiveApp
 import ai.joita.biosoil.ui.JoitaTheme
 
 class MainActivity : AppCompatActivity() {
@@ -11,7 +11,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             JoitaTheme {
-                JoitaSoilApp()
+                CollectiveApp()
             }
         }
     }

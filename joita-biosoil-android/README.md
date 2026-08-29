@@ -1,76 +1,40 @@
-# JOITA BioSeed AI – Soil Saathi
+# Joita Farmer Collective
 
-A new, offline-first Android soil companion made by **JOITA BIOSEED AI** for Indian farmers and field teams. The interface is available only in English and Hindi.
+Android-first, offline field-data collection for Joita agricultural programs. This is a usable local-first release for a pilot of roughly 200 farmers, 200 acres and 50 lead farmers; the dashboard reports actual records entered on each phone.
 
-## What is included
+## Product
 
-- A completely new Jetpack Compose Material 3 interface using JOITA green, cream, turmeric and soil colours.
-- Direct-to-reading launch with no required farmer or field form, plus optional farmer, father, village and mobile details for the report.
-- USB OTG soil-probe support at 9600 baud with complete-frame validation for moisture, temperature, EC, pH, nitrogen, phosphorus, potassium and fertility.
-- Automatic USB discovery, permission request, reconnect on attachment, and visible VID/PID diagnostics for unsupported probes.
-- Manual laboratory/meter readings and permanently labelled demonstration readings.
-- One-screen measurement, Save and Share workflow with manual entry as a fallback.
-- Offline SQLite history—no login, network or cloud account is required.
-- India-focused sampling, OTG and agronomy guidance in English and Hindi.
-- On-device smart advisory with measurement-quality warnings, parameter status and cautious next actions with a laboratory/agronomist disclaimer.
-- Uniform, multi-page branded PDF reports with automatic text layout, farmer identity, decision readiness and Android share-sheet support.
-- Optional phone GPS, camera and USB hardware; all records remain usable without USB.
-- Optional USB, camera and location features so installation is not restricted to phones with every sensor.
+- Material 3 dashboard with farmer, acreage and lead-farmer totals.
+- Searchable farmer register and lead-farmer filter.
+- Farmer proforma: contact, village, optional GPS coordinates, lead status, tenure, and family/farming notes.
+- Farmer-linked fields: acreage, crop, variety, season, sowing date, soil, irrigation, inputs, and boundary/location notes.
+- Dated visits: officer, crop stage, observations, pest/disease issues, recommendations, yield/harvest information, notes, and photo.
+- Farmer → field → visit history that works without connectivity.
 
-## Android compatibility
+## Setup and Android build
 
-- Package: `ai.joita.biosoil`
-- Version: `4.2.0` (`40200`)
-- Minimum: Android 6.0 / API 23
-- Target and compile SDK: Android 16 / API 36
-- One universal APK containing ARM64, ARMv7, x86 and x86-64 support.
-
-The new JOITA package installs alongside the supplied SoilDetector APK. It cannot silently replace the old package because Android requires the same package name and the original developer’s signing key for an in-place update. All future JOITA releases can update this app when they use the private JOITA release keystore stored outside Git in `release-signing/`.
-
-## Release files
-
-- `release/JOITA-BioSeed-AI-Soil-Saathi-4.2.0.apk` — direct installation on Android phones.
-- `release/JOITA-BioSeed-AI-Soil-Saathi-4.2.0.aab` — Google Play submission bundle.
-- `release/SHA256SUMS.txt` — file integrity hashes.
-
-## Installation
-
-Transfer the APK to the phone, open it from Android’s Files app or another trusted transfer app, allow that app to install unknown apps if prompted, and tap **Install**. Version 4.2.0 updates an existing JOITA 4.x installation. The release folder includes `INSTALL.txt` with the same steps. For a development device with USB debugging enabled, use `adb install -r release/JOITA-BioSeed-AI-Soil-Saathi-4.2.0.apk`.
-
-## Languages and offline behavior
-
-English and Hindi are the only packaged app languages. The app opens directly to the soil readings; the language can be switched with the **EN/हिन्दी** action on that screen. Measurement, saving and sharing work without internet.
-
-## Permissions
-
-Android displays the standard USB-device consent prompt automatically when a compatible sensor is detected. The manifest does not request legacy storage, background location, direct calling or broad package access.
-
-## Signing and future updates
-
-The release APK and AAB use the dedicated private JOITA 4096-bit RSA signing key. Preserve `release-signing/joita-biosoil-release.jks`, its private credentials file and `keystore.properties` in at least two secure backups. A future APK with a higher version code, the same package and the same key can update version 4.2.0 without losing local app records.
-
-## Build
-
-Use JDK 17 and an Android SDK containing platform 36:
+Use Android Studio with JDK 17 and Android SDK 36, or run here:
 
 ```bash
-./gradlew testDebugUnitTest lintRelease assembleRelease bundleRelease
+./gradlew testDebugUnitTest assembleDebug
 ```
 
-Release builds require the ignored `keystore.properties` and JOITA private keystore. Back up both private signing files securely: losing them prevents compatible future updates.
+The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`. The app supports Android 6.0 (API 23) and newer. In Android Studio, open this directory, select `app`, then run on an emulator or USB-debuggable device.
 
-## USB sensor support
+## Data and storage
 
-The protocol is based on the supplied SoilDetector 3.2.0 application. It sends an 8-byte poll command, accepts a complete 19-byte response and normalises individual sentinel registers without discarding the other measurements. The original known CH34x-compatible USB IDs are included:
+`farmers` own zero or more `fields`; each field owns zero or more chronological `visits`. Records live in the on-device `joita_collective.db` SQLite database. Selected photos are copied into the app-private `files/field-photos` directory; SQLite stores only their private paths. No broad storage permission is requested. Uninstalling or clearing app data removes local records and photos.
 
-- Vendor `6790`, product `29987`
-- Vendor `6790`, product `21795`
-- Vendor `6790`, product `21778`
+There is intentionally no pretend sync. Future cloud sync should add stable UUIDs, update/tombstone columns and a durable outbox, then push idempotently to authenticated Supabase/Postgres tables under row-level policies. Photos should upload separately to private object storage. Define conflict behavior and field-staff identity before rollout.
 
-Other drivers recognized by `usb-serial-for-android` are also probed. Physical OTG cable/sensor validation is still required on the target probe model before field rollout.
+## One install QR (not farmer or field QR codes)
 
-## Privacy and safety
+`release/JOITA-Farmer-Collective-INSTALL-QR.svg` is the single staff-distribution QR. It currently encodes this explicit placeholder:
 
-Farmer, field and soil records are kept in the app’s local database. “Local only — cloud sync is not configured” is shown explicitly; the app does not pretend to upload data. Reports are shared only when the user invokes Android’s share sheet.
+`https://REPLACE-BEFORE-RELEASE.example/joita-farmer-collective`
 
-Soil scoring is advisory. Major fertilizer or treatment decisions must be confirmed with a soil laboratory or qualified agronomist.
+Before release, host an HTTPS landing page or trusted APK/Play link, replace `INSTALL_URL` in `release/generate_install_qr.py`, and rerun the script. Test the QR on two Android phones. It is solely for app installation; farmers and fields do not receive individual QR codes.
+
+## Tools
+
+Kotlin 2.2, Jetpack Compose Material 3, Android SQLite (`SQLiteOpenHelper`), Android Activity Result APIs, Gradle/Android Gradle Plugin, and Python `qrcode` only for the distribution QR artifact.

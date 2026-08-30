@@ -1,18 +1,11 @@
-JOITA BIOSEED AI - SOIL SAATHI 4.2.0
+JOITA FARMER COLLECTIVE 1.0.0
 
 ANDROID INSTALLATION
 
-1. Download or copy JOITA-BioSeed-AI-Soil-Saathi-4.2.0.apk to the Android phone.
-2. Open the file from Files, WhatsApp, email or another trusted transfer app.
-3. If Android asks, allow that transfer app to install unknown apps.
-4. Tap Install (or Update when a JOITA 4.x version is already installed), then open “JOITA BioSeed AI – Soil Saathi”.
-5. Connect the soil sensor with USB OTG. The app opens directly to the eight measurements and asks for USB access automatically.
-6. Fully insert the probes into moist soil at root depth. Keep them still; wait 3–5 seconds for most values and longer for pH when needed.
-7. Read the Low / In range / High labels and the farmer actions below the values. Test 3–5 fresh nearby spots before a field decision.
-8. Add farmer, father, village or mobile details only if you want them printed on the report. They are optional and never block the reading.
-9. Tap Save to keep the reading, Download PDF to save the structured report, or Share to send it.
-10. Use EN/हिन्दी at the top to change language and the book icon to open the full measurement guide.
+1. Scan JOITA-Farmer-Collective-INSTALL-QR.svg with the Android camera.
+2. Open the latest GitHub release and tap JOITA-Farmer-Collective-1.0.0.apk.
+3. Approve the download warning if Android displays one.
+4. Open the downloaded APK. If asked, allow your browser to install unknown apps.
+5. Tap Install, then open Joita Farmer Collective.
 
-The app needs Android 6.0 or newer. USB OTG is optional; manual entry still works when the sensor is unavailable.
-
-This JOITA app installs alongside the old SoilDetector app. It updates earlier JOITA 4.x releases normally and keeps their saved data.
+The app supports Android 6.0 and newer. Farmer, field, visit and photo data remains on the phone. Use "Save or share farmer PDF" on a farmer profile to save or send the complete record. Keep a separate backup of important PDFs and phone data.

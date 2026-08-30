@@ -17,11 +17,11 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "ai.joita.biosoil"
+        applicationId = "ai.joita.farmercollective"
         minSdk = 23
         targetSdk = 36
-        versionCode = 40200
-        versionName = "4.2.0"
+        versionCode = 10000
+        versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
         buildConfigField("String", "SUPPORT_PHONE", "\"\"")

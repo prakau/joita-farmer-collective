@@ -10,6 +10,7 @@ Android-first, offline field-data collection for Joita agricultural programs. Th
 - Farmer-linked fields: acreage, crop, variety, season, sowing date, soil, irrigation, inputs, and boundary/location notes.
 - Dated visits: officer, crop stage, observations, pest/disease issues, recommendations, yield/harvest information, notes, and photo.
 - Farmer → field → visit history that works without connectivity.
+- One-tap PDF export for a farmer profile, every linked field, and complete visit history through Android's Save/Share sheet.
 
 ## Setup and Android build
 
@@ -19,7 +20,9 @@ Use Android Studio with JDK 17 and Android SDK 36, or run here:
 ./gradlew testDebugUnitTest assembleDebug
 ```
 
-The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`. The app supports Android 6.0 (API 23) and newer. In Android Studio, open this directory, select `app`, then run on an emulator or USB-debuggable device.
+The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`. The app uses the distinct package `ai.joita.farmercollective`, supports Android 6.0 (API 23) and newer, and can coexist with Soil Saathi. In Android Studio, open this directory, select `app`, then run on an emulator or USB-debuggable device.
+
+Signed release builds require the ignored JOITA keystore and `keystore.properties`, then use `./gradlew assembleRelease`. Preserve that private key: every future in-place Android update must be signed with the same key.
 
 ## Data and storage
 
@@ -29,11 +32,11 @@ There is intentionally no pretend sync. Future cloud sync should add stable UUID
 
 ## One install QR (not farmer or field QR codes)
 
-`release/JOITA-Farmer-Collective-INSTALL-QR.svg` is the single staff-distribution QR. It currently encodes this explicit placeholder:
+`release/JOITA-Farmer-Collective-INSTALL-QR.svg` is the single staff-distribution QR. It opens the permanent GitHub Releases destination:
 
-`https://REPLACE-BEFORE-RELEASE.example/joita-farmer-collective`
+`https://github.com/prakau/joita-farmer-collective/releases/latest`
 
-Before release, host an HTTPS landing page or trusted APK/Play link, replace `INSTALL_URL` in `release/generate_install_qr.py`, and rerun the script. Test the QR on two Android phones. It is solely for app installation; farmers and fields do not receive individual QR codes.
+Field staff scan the QR, open the latest release, download the `.apk`, approve installation from their browser when Android asks, and tap **Install**. Regenerate and test the QR if the repository destination changes. It is solely for app installation; farmers and fields do not receive individual QR codes.
 
 ## Tools
 

@@ -4,7 +4,7 @@ from pathlib import Path
 import qrcode
 import qrcode.image.svg
 
-INSTALL_URL = "https://REPLACE-BEFORE-RELEASE.example/joita-farmer-collective"
+INSTALL_URL = "https://github.com/prakau/joita-farmer-collective/releases/latest"
 OUTPUT = Path(__file__).with_name("JOITA-Farmer-Collective-INSTALL-QR.svg")
 
 image = qrcode.make(

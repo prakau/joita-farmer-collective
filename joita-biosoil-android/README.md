@@ -31,7 +31,7 @@ Use Android Studio with JDK 17 and Android SDK 36, or run here:
 
 The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`. The app uses the distinct package `ai.joita.farmercollective`, supports Android 6.0 (API 23) and newer, and can coexist with Soil Saathi. In Android Studio, open this directory, select `app`, then run on an emulator or USB-debuggable device.
 
-Signed release builds require the ignored JOITA keystore and `keystore.properties`, then use `./gradlew assembleRelease`. Preserve that private key: every future in-place Android update must be signed with the same key. Version 1.1.0 updates the same `ai.joita.farmercollective` installation and retains its local SQLite records.
+Signed release builds require the ignored JOITA keystore and `keystore.properties`, then use `./gradlew assembleRelease`. Preserve that private key: every future in-place Android update must be signed with the same key. Version 1.1.1 updates the same `ai.joita.farmercollective` installation and retains its local SQLite records.
 
 ## Data and storage
 

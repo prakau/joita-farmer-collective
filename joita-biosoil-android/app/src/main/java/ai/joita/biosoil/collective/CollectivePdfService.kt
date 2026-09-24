@@ -42,6 +42,20 @@ object CollectivePdfService {
         renderer.pair("खेत", fields.size.toString())
         renderer.pair("कुल क्षेत्र", "${formatAcres(fields.sumOf { it.acreage })} एकड़")
         renderer.pair("दर्ज विजिट", visits.values.sumOf { it.size }.toString())
+        renderer.section("Data completeness / अगला कदम")
+        val missing = buildList {
+            if (farmer.phone.isBlank()) add("मोबाइल / Phone भरें")
+            if (farmer.photoPath.isBlank()) add("किसान का पहचान फोटो जोड़ें")
+            if (farmer.latitude.isBlank() || farmer.longitude.isBlank()) add("GPS या Plot ID सुरक्षित करें")
+            if (fields.isEmpty()) add("कम-से-कम एक field: area, crop, season, irrigation भरें")
+            if (impacts.isEmpty()) add("Hindi impact assessment: baseline / follow-up भरें")
+            if (fields.isNotEmpty() && visits.values.flatten().isEmpty()) add("पहली dated field visit दर्ज करें")
+        }
+        if (missing.isEmpty()) renderer.body("पूरा रिकॉर्ड: profile, field, visit और impact assessment उपलब्ध हैं।")
+        else {
+            renderer.body("यह रिपोर्ट अभी अधूरी है। नीचे के डेटा को भरकर दोबारा PDF export करें:")
+            missing.forEachIndexed { index, item -> renderer.body("${index + 1}. $item") }
+        }
         renderer.section("खेत (${fields.size})")
         if (fields.isEmpty()) renderer.body("खेत दर्ज नहीं है।")
         fields.forEachIndexed { index, field ->

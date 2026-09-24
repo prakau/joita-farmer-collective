@@ -7,12 +7,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.shape.RoundedCornerShape
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
@@ -62,6 +64,11 @@ internal fun ImpactForm(farmer: Farmer, fields: List<FarmField>, close: () -> Un
     }, scrollKey = page) {
         Text("आपके दिए JOITA / CCF प्रपत्र के अनुसार • ${page + 1}/6", color = Forest, fontSize = 12.sp)
         Text("मसौदा अपने-आप इसी फोन पर सहेजता है। अज्ञात उत्तर खाली छोड़ें। सहेजे गए आकलन को बदलने के लिए नया ‘सुधार’ रिकॉर्ड बनाएँ।", color = Muted, fontSize = 13.sp)
+        if (fields.isEmpty()) {
+            Surface(color = Color(0xFFFFF1D6), shape = RoundedCornerShape(14.dp)) {
+                Text("इस किसान का कोई field अभी नहीं है। A सेक्शन में Project Acres, Plot ID और Crop / Stage खुद भरें, या पहले किसान प्रोफाइल से Add field करें। इनके बिना impact report सहेजी नहीं जाएगी।", Modifier.padding(12.dp), color = Color(0xFF694619), fontSize = 12.sp)
+            }
+        }
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             ImpactSchema.sections.forEachIndexed { index, section -> FilterChip(page == index, { page = index }, label = { Text(section.title.substringBefore('.')) }) }
         }

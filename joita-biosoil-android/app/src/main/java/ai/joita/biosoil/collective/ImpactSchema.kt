@@ -84,6 +84,12 @@ object ImpactSchema {
         if (CollectiveRules.dateMillis(date) == null) return "सही आकलन तिथि भरें (DD-MM-YYYY)।"
         if (officer.isBlank()) return "फील्ड कर्मी का नाम भरें।"
         if (answers["stage"] !in stages) return "आकलन का चरण चुनें।"
+        listOf(
+            "farmerRef" to "परियोजना Farmer ID",
+            "plotRef" to "Plot ID / FarmTrace संदर्भ",
+            "projectAcres" to "परियोजना क्षेत्र",
+            "cropStage" to "फसल / अवस्था",
+        ).firstOrNull { answers[it.first].isNullOrBlank() }?.let { return "${it.second} भरना जरूरी है ताकि रिपोर्ट उपयोगी रहे।" }
         for (question in sections.flatMap { it.questions }) {
             val value = answers[question.key].orEmpty().trim()
             if (value.isEmpty()) continue

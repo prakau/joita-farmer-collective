@@ -1,6 +1,7 @@
 package ai.joita.biosoil.collective
 
 import android.content.Context
+import ai.joita.biosoil.BuildConfig
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -36,7 +37,7 @@ object CollectiveEvidence {
             )))
         }
         val missing = JSONArray()
-        val root = JSONObject().put("formatVersion", 1).put("appVersion", "1.1.0")
+        val root = JSONObject().put("formatVersion", 1).put("appVersion", BuildConfig.VERSION_NAME)
             .put("exportedAtDeviceTime", System.currentTimeMillis()).put("farmer", profile).put("fields", rows).put("missingPhotos", missing)
         root.put("impactAssessments", JSONArray().apply { impacts.forEach { a -> put(JSONObject(mapOf(
             "id" to a.id, "farmerId" to a.farmerId, "date" to a.date, "officer" to a.officer,

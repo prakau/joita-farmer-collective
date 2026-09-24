@@ -167,5 +167,5 @@ object CollectivePdfService {
         fun finish() = finishPage()
     }
 
-    private fun formatAcres(value: Double) = if (value % 1.0 == 0.0) value.toInt().toString() else String.format(java.util.Locale.US, "%.1f", value)
+    private fun formatAcres(value: Double) = java.math.BigDecimal.valueOf(value).stripTrailingZeros().toPlainString()
 }

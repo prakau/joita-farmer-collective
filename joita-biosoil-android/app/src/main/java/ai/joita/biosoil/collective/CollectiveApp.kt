@@ -531,7 +531,7 @@ private fun FarmerForm(initial: Farmer?, close: () -> Unit, save: suspend (Farme
 @Composable
 private fun FieldForm(farmerId: Long, initial: FarmField?, close: () -> Unit, save: suspend (FarmField) -> Unit) {
     val scope = rememberCoroutineScope()
-    var area by rememberSaveable { mutableStateOf(initial?.let { CollectiveRules.acres(it.acreage) }.orEmpty()) }
+    var area by rememberSaveable { mutableStateOf(initial?.let { java.math.BigDecimal.valueOf(it.acreage).stripTrailingZeros().toPlainString() }.orEmpty()) }
     var crop by rememberSaveable { mutableStateOf(initial?.crop.orEmpty()) }
     var variety by rememberSaveable { mutableStateOf(initial?.variety.orEmpty()) }
     var season by rememberSaveable { mutableStateOf(initial?.season ?: "Kharif") }

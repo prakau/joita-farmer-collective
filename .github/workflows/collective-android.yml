@@ -1,0 +1,39 @@
+name: Verify Farmer Collective
+on:
+  push:
+    branches: [main]
+    paths: ['joita-biosoil-android/**', '.github/workflows/collective-android.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Build and check
+        working-directory: joita-biosoil-android
+        run: ./gradlew testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest
+      - name: Enable emulator acceleration
+        run: sudo chmod 666 /dev/kvm
+      - name: Device tests and report samples
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          script: bash joita-biosoil-android/scripts/verify-collective-device.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: collective-verification
+          path: |
+            joita-biosoil-android/app/build/reports
+            joita-biosoil-android/app/build/outputs/androidTest-results
+            joita-biosoil-android/app/build/qa

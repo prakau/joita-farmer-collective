@@ -1,11 +1,11 @@
-JOITA FARMER COLLECTIVE 1.0.0
+JOITA FARMER COLLECTIVE 1.1.0
 
 ANDROID INSTALLATION
 
 1. Scan JOITA-Farmer-Collective-INSTALL-QR.svg with the Android camera.
-2. Open the latest GitHub release and tap JOITA-Farmer-Collective-1.0.0.apk.
+2. Open the latest GitHub release and tap JOITA-Farmer-Collective-1.1.0.apk.
 3. Approve the download warning if Android displays one.
 4. Open the downloaded APK. If asked, allow your browser to install unknown apps.
 5. Tap Install, then open Joita Farmer Collective.
 
-The app supports Android 6.0 and newer. Farmer, field, visit and photo data remains on the phone. Use "Save or share farmer PDF" on a farmer profile to save or send the complete record. Keep a separate backup of important PDFs and phone data.
+The app supports Android 6.0 and newer. Farmer, field, visit and photo data remains on the phone. Open Reports to save a complete farmer record and its photos as a PDF in Downloads, Drive, or another chosen location. Keep a separate backup of important PDFs and phone data.

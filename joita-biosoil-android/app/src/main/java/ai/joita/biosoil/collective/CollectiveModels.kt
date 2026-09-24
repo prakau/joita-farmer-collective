@@ -11,6 +11,9 @@ data class Farmer(
     val notes: String = "",
     val tenure: String = "Owned",
     val createdAt: Long = System.currentTimeMillis(),
+    val photoPath: String = "",
+    val recordedBy: String = "",
+    val acknowledgedAt: Long = 0,
 )
 
 data class FarmField(

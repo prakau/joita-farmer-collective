@@ -10,7 +10,7 @@ import java.util.zip.ZipOutputStream
 
 /** A user-exported evidence copy, not cloud sync or a restore format. */
 object CollectiveEvidence {
-    fun create(context: Context, farmer: Farmer, fields: List<FarmField>, visits: Map<Long, List<FieldVisit>>, pdf: File): File {
+    fun create(context: Context, farmer: Farmer, fields: List<FarmField>, visits: Map<Long, List<FieldVisit>>, pdf: File, impacts: List<ImpactAssessment> = emptyList()): File {
         val file = File(pdf.parentFile, "JOITA-evidence-${farmer.id}-${UUID.randomUUID().toString().take(8)}.zip")
         fun photoName(path: String) = if (path.isBlank()) "" else "photos/${File(path).name}"
         val profile = JSONObject(mapOf(
@@ -38,6 +38,13 @@ object CollectiveEvidence {
         val missing = JSONArray()
         val root = JSONObject().put("formatVersion", 1).put("appVersion", "1.1.0")
             .put("exportedAtDeviceTime", System.currentTimeMillis()).put("farmer", profile).put("fields", rows).put("missingPhotos", missing)
+        root.put("impactAssessments", JSONArray().apply { impacts.forEach { a -> put(JSONObject(mapOf(
+            "id" to a.id, "farmerId" to a.farmerId, "date" to a.date, "officer" to a.officer,
+            "answers" to JSONObject(a.answers), "photos" to JSONObject(a.photos.mapValues { photoName(it.value) }),
+            "consentedAtDeviceTime" to a.consentedAt, "createdAtDeviceTime" to a.createdAt,
+        ))) } })
+        root.put("impactQuestionLabels", JSONObject(ImpactSchema.sections.flatMap { it.questions }.associate { it.key to it.label }))
+        root.put("impactConsentStatement", ImpactSchema.consentText)
         try {
             ZipOutputStream(file.outputStream().buffered()).use { zip ->
                 fun entry(name: String, bytes: ByteArray) { zip.putNextEntry(ZipEntry(name)); zip.write(bytes); zip.closeEntry() }
@@ -49,7 +56,7 @@ object CollectiveEvidence {
                     checksums.append(CollectivePhotos.sha256(source)).append("  ").append(name).append('\n')
                 }
                 copy("farmer-report.pdf", pdf)
-                (listOf(farmer.photoPath) + visits.values.flatten().map { it.photoPath }).filter { it.isNotBlank() }.distinct().forEach { path ->
+                (listOf(farmer.photoPath) + visits.values.flatten().map { it.photoPath } + impacts.flatMap { it.photos.values }).filter { it.isNotBlank() }.distinct().forEach { path ->
                     val photo = File(path)
                     val dir = File(context.filesDir, "field-photos").canonicalFile
                     if (photo.canonicalFile.parentFile == dir && photo.isFile) {
@@ -60,7 +67,9 @@ object CollectiveEvidence {
                         }
                     } else missing.put(photoName(path))
                 }
-                entry("records.json", root.toString(2).toByteArray(Charsets.UTF_8))
+                val recordsBytes = root.toString(2).toByteArray(Charsets.UTF_8)
+                entry("records.json", recordsBytes)
+                checksums.append(java.security.MessageDigest.getInstance("SHA-256").digest(recordsBytes).joinToString("") { "%02x".format(it) }).append("  records.json\n")
                 entry("SHA256SUMS.txt", checksums.toString().toByteArray())
                 entry("READ-ME.txt", """
                     JOITA FARMER EVIDENCE EXPORT
@@ -82,4 +91,3 @@ object CollectiveEvidence {
         } catch (e: Exception) { file.delete(); throw e }
     }
 }
-

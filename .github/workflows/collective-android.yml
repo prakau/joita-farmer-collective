@@ -16,6 +16,10 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+          cache: gradle
+          cache-dependency-path: |
+            joita-biosoil-android/**/*.gradle.kts
+            joita-biosoil-android/gradle/wrapper/gradle-wrapper.properties
       - name: Build and check
         working-directory: joita-biosoil-android
         run: ./gradlew testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest

@@ -32,7 +32,9 @@ data class CollectiveSnapshot(
     val farmers: List<Farmer> = emptyList(),
     val fields: List<FarmField> = emptyList(),
     val visits: List<FieldVisit> = emptyList(),
+    val impacts: List<ImpactAssessment> = emptyList(),
 ) {
+    fun impactsFor(farmerId: Long) = impacts.filter { it.farmerId == farmerId }
     val acres: Double get() = fields.sumOf { it.acreage }
     fun fieldsFor(farmerId: Long) = fields.filter { it.farmerId == farmerId }
     fun visitsFor(fieldId: Long) = visits.filter { it.fieldId == fieldId }

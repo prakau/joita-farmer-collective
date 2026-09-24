@@ -10,7 +10,7 @@ test_status=$?
 adb pull /sdcard/Android/data/ai.joita.farmercollective.debug/files/qa app/build/qa || true
 adb shell am force-stop ai.joita.farmercollective.debug
 adb shell am start -n ai.joita.farmercollective.debug/ai.joita.biosoil.MainActivity
-sleep 3
+sleep 10
 adb exec-out screencap -p > app/build/qa/dashboard.png
 adb logcat -d -t 2000 > app/build/qa/logcat.txt
 exit "$test_status"

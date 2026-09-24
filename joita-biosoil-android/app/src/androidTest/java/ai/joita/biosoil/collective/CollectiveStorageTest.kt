@@ -67,4 +67,27 @@ class CollectiveStorageTest {
             assertEquals(CollectivePhotos.sha256(source), json.getString("originalSha256"))
         } finally { source.delete(); listOf(path, path + ".original", path + ".json").forEach { File(it).delete() } }
     }
+
+    @Test fun impactHistoryIsAppendOnlyAndSurvivesUpgradeFromVersionTwo() {
+        val name = "test-impact-${UUID.randomUUID()}.db"
+        try {
+            var farmerId: Long
+            CollectiveRepository(context, name).use { repo ->
+                farmerId = repo.addFarmer(Farmer(name = "आशा", village = "रामपुर"))
+                repo.writableDatabase.execSQL("DROP TABLE impact_assessments")
+                repo.writableDatabase.version = 2
+            }
+            CollectiveRepository(context, name).use { repo ->
+                val baseline = ImpactAssessment(farmerId = farmerId, date = "01-06-2026", officer = "मीरा", answers = mapOf("stage" to "बेसलाइन", "ph" to "7.2"))
+                repo.addImpact(baseline)
+                repo.addImpact(baseline.copy(date = "24-09-2026", answers = mapOf("stage" to "फॉलो-अप", "ph" to "7.0")))
+            }
+            CollectiveRepository(context, name).use { repo ->
+                assertEquals("आशा", repo.farmers().single().name)
+                assertEquals(2, repo.snapshot().impactsFor(farmerId).size)
+                assertEquals(setOf("7.2", "7.0"), repo.impacts().map { it.answers["ph"] }.toSet())
+                assertTrue(repo.impacts().all { it.consentedAt == 0L })
+            }
+        } finally { context.deleteDatabase(name) }
+    }
 }

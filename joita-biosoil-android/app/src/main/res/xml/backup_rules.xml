@@ -3,4 +3,5 @@
     <exclude domain="database" path="joita_soil.db" />
     <exclude domain="database" path="joita_collective.db" />
     <exclude domain="file" path="field-photos/" />
+    <exclude domain="sharedpref" path="impact_drafts.xml" />
 </full-backup-content>

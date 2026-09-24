@@ -5,7 +5,7 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 
-class CollectiveRepository(private val context: Context, name: String = "joita_collective.db") : SQLiteOpenHelper(context, name, null, 2) {
+class CollectiveRepository(private val context: Context, name: String = "joita_collective.db") : SQLiteOpenHelper(context, name, null, 3) {
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL("""CREATE TABLE farmers(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,phone TEXT,village TEXT NOT NULL,latitude TEXT,longitude TEXT,lead INTEGER NOT NULL DEFAULT 0,notes TEXT,tenure TEXT,created_at INTEGER NOT NULL)""")
         db.execSQL("""CREATE TABLE fields(id INTEGER PRIMARY KEY AUTOINCREMENT,farmer_id INTEGER NOT NULL,acreage REAL NOT NULL,crop TEXT NOT NULL,variety TEXT,season TEXT,sowing_date TEXT,soil_type TEXT,irrigation TEXT,inputs TEXT,boundary_notes TEXT,created_at INTEGER NOT NULL,FOREIGN KEY(farmer_id) REFERENCES farmers(id) ON DELETE CASCADE)""")
@@ -13,11 +13,34 @@ class CollectiveRepository(private val context: Context, name: String = "joita_c
         db.execSQL("CREATE INDEX idx_fields_farmer ON fields(farmer_id)")
         db.execSQL("CREATE INDEX idx_visits_field ON visits(field_id)")
         addRegistrationColumns(db)
+        addImpactTable(db)
     }
 
     override fun onConfigure(db: SQLiteDatabase) { db.setForeignKeyConstraintsEnabled(true) }
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         if (oldVersion < 2) addRegistrationColumns(db)
+        if (oldVersion < 3) addImpactTable(db)
+    }
+
+    private fun addImpactTable(db: SQLiteDatabase) {
+        db.execSQL("""CREATE TABLE impact_assessments(id INTEGER PRIMARY KEY AUTOINCREMENT,farmer_id INTEGER NOT NULL,date TEXT NOT NULL,officer TEXT NOT NULL,answers TEXT NOT NULL,photos TEXT NOT NULL,consented_at INTEGER NOT NULL,created_at INTEGER NOT NULL,FOREIGN KEY(farmer_id) REFERENCES farmers(id) ON DELETE CASCADE)""")
+        db.execSQL("CREATE INDEX idx_impact_farmer ON impact_assessments(farmer_id)")
+    }
+
+    /** Append only: a follow-up or correction never overwrites the earlier assessment. */
+    fun addImpact(value: ImpactAssessment): Long {
+        require(value.id == 0L)
+        require(ImpactSchema.validate(value.answers, value.date, value.officer) == null)
+        return writableDatabase.insertOrThrow("impact_assessments", null, ContentValues().apply {
+            put("farmer_id", value.farmerId); put("date", value.date); put("officer", value.officer)
+            put("answers", org.json.JSONObject(value.answers).toString()); put("photos", org.json.JSONObject(value.photos).toString())
+            put("consented_at", value.consentedAt); put("created_at", value.createdAt)
+        })
+    }
+
+    fun impacts(): List<ImpactAssessment> = readableDatabase.query("impact_assessments", null, null, null, null, null, "created_at DESC,id DESC").use { c ->
+        fun map(raw: String): Map<String, String> { val json = org.json.JSONObject(raw); return json.keys().asSequence().associateWith { json.getString(it) } }
+        buildList { while (c.moveToNext()) add(ImpactAssessment(c.getLong(0), c.getLong(1), c.getString(2), c.getString(3), map(c.getString(4)), map(c.getString(5)), c.getLong(6), c.getLong(7))) }
     }
 
     private fun addRegistrationColumns(db: SQLiteDatabase) {
@@ -74,5 +97,5 @@ class CollectiveRepository(private val context: Context, name: String = "joita_c
         return id
     }
 
-    fun snapshot() = CollectiveSnapshot(farmers(), fields(), visits())
+    fun snapshot() = CollectiveSnapshot(farmers(), fields(), visits(), impacts())
 }

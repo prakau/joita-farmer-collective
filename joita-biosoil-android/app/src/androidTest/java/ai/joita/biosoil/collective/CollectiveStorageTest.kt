@@ -78,9 +78,10 @@ class CollectiveStorageTest {
                 repo.writableDatabase.version = 2
             }
             CollectiveRepository(context, name).use { repo ->
-                val baseline = ImpactAssessment(farmerId = farmerId, date = "01-06-2026", officer = "मीरा", answers = mapOf("stage" to "बेसलाइन", "ph" to "7.2"))
+                val anchors = mapOf("stage" to "बेसलाइन", "farmerRef" to "CCF-001", "plotRef" to "P-001", "projectAcres" to "1.5", "cropStage" to "गेहूँ / बढ़वार")
+                val baseline = ImpactAssessment(farmerId = farmerId, date = "01-06-2026", officer = "मीरा", answers = anchors + ("ph" to "7.2"))
                 repo.addImpact(baseline)
-                repo.addImpact(baseline.copy(date = "24-09-2026", answers = mapOf("stage" to "फॉलो-अप", "ph" to "7.0")))
+                repo.addImpact(baseline.copy(date = "24-09-2026", answers = anchors + mapOf("stage" to "फॉलो-अप", "ph" to "7.0")))
             }
             CollectiveRepository(context, name).use { repo ->
                 assertEquals("आशा", repo.farmers().single().name)

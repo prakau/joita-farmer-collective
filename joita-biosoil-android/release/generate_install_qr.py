@@ -14,4 +14,5 @@ image = qrcode.make(
     border=4,
 )
 image.save(OUTPUT)
+qrcode.make(INSTALL_URL, box_size=12, border=4).save(OUTPUT.with_suffix(".png"))
 print(f"Wrote {OUTPUT} -> {INSTALL_URL}")

@@ -29,7 +29,7 @@ class CollectiveUiTest {
         compose.onNodeWithContentDescription("बंद करें").performClick()
         compose.onNodeWithTag("add-impact").performClick()
         compose.onNodeWithText("फील्ड कर्मी का नाम *").assertTextContains("QA Officer")
-        compose.onNodeWithTag("impact-stage-बेसलाइन").performScrollTo().assertIsOn()
+        compose.onNodeWithTag("impact-stage-बेसलाइन").performScrollTo().assertIsSelected()
         compose.onNodeWithText("परियोजना किसान ID", substring = true).performScrollTo().performTextInput("CCF-QA-1")
         compose.onNodeWithText("FarmTrace / खेत / Plot ID", substring = true).performScrollTo().performTextInput("P-QA-1")
         compose.onNodeWithText("परियोजना क्षेत्र (एकड़)", substring = true).performScrollTo().performTextInput("1.5")

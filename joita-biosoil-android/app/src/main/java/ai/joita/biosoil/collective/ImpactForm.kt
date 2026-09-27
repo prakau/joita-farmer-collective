@@ -118,10 +118,10 @@ internal fun ImpactForm(farmer: Farmer, fields: List<FarmField>, close: () -> Un
                                     Text("इस किसान का खेत अभी दर्ज नहीं है। रिपोर्ट के लिए Farmer ID, Plot ID, क्षेत्र और फसल भरें; अगली बार खेत प्रोफाइल जोड़ें।", Modifier.padding(12.dp), color = Color(0xFF694619), fontSize = 12.sp)
                                 }
                                 if (page == 0) {
-                                    val stage = ImpactSchema.sections.first().questions.first { it.key == "stage" }
-                                    ImpactOptions(stage, value("stage")) { change("stage", it) }
                                     val cropStage = ImpactSchema.sections.first().questions.first { it.key == "cropStage" }
                                     ImpactAnswer(cropStage, value("cropStage"), { change("cropStage", it) })
+                                    val stage = ImpactSchema.sections.first().questions.first { it.key == "stage" }
+                                    ImpactOptions(stage, value("stage")) { change("stage", it) }
                                 }
                                 if (page == 0) {
                                     DateInput("आकलन तिथि", value("assessmentDate")) { change("assessmentDate", it) }
@@ -172,7 +172,7 @@ internal fun ImpactForm(farmer: Farmer, fields: List<FarmField>, close: () -> Un
 private fun ImpactAnswer(question: ImpactQuestion, answer: String, change: (String) -> Unit) {
     quickAnswers(question.key).takeIf { it.isNotEmpty() }?.let { choices ->
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            choices.forEachIndexed { index, choice -> AssistChip(onClick = { change(choice) }, label = { Text("＋ $choice", fontSize = 11.sp) }, modifier = Modifier.testTag("impact-quick-${question.key}-$index")) }
+            choices.forEachIndexed { index, choice -> FilterChip(selected = answer == choice, onClick = { change(choice) }, label = { Text("＋ $choice", fontSize = 11.sp) }, modifier = Modifier.testTag("impact-quick-${question.key}-$index")) }
         }
     }
     Input(question.label, answer, change,

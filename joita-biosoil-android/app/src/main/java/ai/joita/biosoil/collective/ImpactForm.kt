@@ -120,6 +120,8 @@ internal fun ImpactForm(farmer: Farmer, fields: List<FarmField>, close: () -> Un
                                 if (page == 0) {
                                     val stage = ImpactSchema.sections.first().questions.first { it.key == "stage" }
                                     ImpactOptions(stage, value("stage")) { change("stage", it) }
+                                    val cropStage = ImpactSchema.sections.first().questions.first { it.key == "cropStage" }
+                                    ImpactAnswer(cropStage, value("cropStage"), { change("cropStage", it) })
                                 }
                                 if (page == 0) {
                                     DateInput("आकलन तिथि", value("assessmentDate")) { change("assessmentDate", it) }
@@ -129,7 +131,7 @@ internal fun ImpactForm(farmer: Farmer, fields: List<FarmField>, close: () -> Un
                                 if (page == 2) Text("Soil Saathi की वास्तविक यंत्र / लैब रीडिंग ही भरें। इकाई स्रोत से देखकर लिखें; अनुमानित मान न डालें।", color = Muted, fontSize = 13.sp)
                                 if (page == 4) Text("किसान का बताया प्रभाव और मापा गया प्रभाव अलग रखें। तुलना का आधार लिखें; CO₂e की गणना बाद में JOITA करेगा।", color = Muted, fontSize = 13.sp)
                                 if (error.isNotBlank()) ErrorText(error)
-                                ImpactSchema.sections[page].questions.filterNot { page == 0 && it.key == "stage" }.forEach { question ->
+                                ImpactSchema.sections[page].questions.filterNot { page == 0 && it.key in setOf("stage", "cropStage") }.forEach { question ->
                                     key(question.key) {
                                         val answer = value(question.key)
                                         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -138,18 +140,7 @@ internal fun ImpactForm(farmer: Farmer, fields: List<FarmField>, close: () -> Un
                                                     ImpactOptions(question, answer, { change(question.key, it) })
                                                 }
                                                 "date" -> DateInput(question.label, answer) { change(question.key, it) }
-                                                else -> {
-                                                    Input(question.label, answer, { change(question.key, it) },
-                                                        required = question.key in setOf("farmerRef", "plotRef", "projectAcres", "cropStage"),
-                                                        keyboard = if (question.kind == "number") KeyboardType.Decimal else KeyboardType.Text,
-                                                        lines = if (question.key in listOf("fieldNotes", "feedback", "savingDetails", "correctionRef", "readingSource")) 3 else 1,
-                                                        modifier = Modifier.testTag("impact-input-${question.key}"))
-                                                    quickAnswers(question.key).takeIf { it.isNotEmpty() }?.let { choices ->
-                                                        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                                            choices.forEachIndexed { index, choice -> AssistChip(onClick = { change(question.key, choice) }, label = { Text("＋ $choice", fontSize = 11.sp) }, modifier = Modifier.testTag("impact-quick-${question.key}-$index")) }
-                                                        }
-                                                    }
-                                                }
+                                                else -> ImpactAnswer(question, answer, { change(question.key, it) })
                                             }
                                         }
                                     }
@@ -175,6 +166,20 @@ internal fun ImpactForm(farmer: Farmer, fields: List<FarmField>, close: () -> Un
             }
         }
     }
+}
+
+@Composable
+private fun ImpactAnswer(question: ImpactQuestion, answer: String, change: (String) -> Unit) {
+    quickAnswers(question.key).takeIf { it.isNotEmpty() }?.let { choices ->
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            choices.forEachIndexed { index, choice -> AssistChip(onClick = { change(choice) }, label = { Text("＋ $choice", fontSize = 11.sp) }, modifier = Modifier.testTag("impact-quick-${question.key}-$index")) }
+        }
+    }
+    Input(question.label, answer, change,
+        required = question.key in setOf("farmerRef", "plotRef", "projectAcres", "cropStage"),
+        keyboard = if (question.kind == "number") KeyboardType.Decimal else KeyboardType.Text,
+        lines = if (question.key in listOf("fieldNotes", "feedback", "savingDetails", "correctionRef", "readingSource")) 3 else 1,
+        modifier = Modifier.testTag("impact-input-${question.key}"))
 }
 
 @Composable

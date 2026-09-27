@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.net.Uri
+import ai.joita.biosoil.BuildConfig
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -76,6 +77,7 @@ fun CollectiveApp() {
     var reportFarmerId by rememberSaveable { mutableLongStateOf(0) }
     var exportBusy by remember { mutableStateOf(false) }
     var reportPath by rememberSaveable { mutableStateOf("") }
+    val draftPreferences = remember { context.getSharedPreferences("impact_drafts", Context.MODE_PRIVATE) }
 
     suspend fun refresh() {
         data = withContext(Dispatchers.IO) { repo.snapshot() }
@@ -143,7 +145,8 @@ fun CollectiveApp() {
 
     MaterialTheme(colorScheme = lightColorScheme(
         primary = Forest, secondary = Amber, background = Paper, surface = Color.White,
-        primaryContainer = Moss, onPrimaryContainer = Forest, surfaceVariant = Moss,
+        primaryContainer = Moss, onPrimaryContainer = Forest, secondaryContainer = Moss,
+        onSecondaryContainer = Forest, surfaceVariant = Moss,
         onSurfaceVariant = Muted, outline = Color(0xFFB8C8BD),
     )) {
         Scaffold(
@@ -199,12 +202,21 @@ fun CollectiveApp() {
         if (reportFarmer != null) AlertDialog(
             onDismissRequest = { if (!exportBusy) reportFarmerId = 0 },
             icon = { Icon(Icons.Rounded.PictureAsPdf, null) },
-            title = { Text("किसान की रिपोर्ट") },
+            title = { Text("डेटा भरें और रिपोर्ट बनाएँ") },
             text = { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(reportFarmer.name, fontWeight = FontWeight.Bold)
-                Text("प्रोफाइल, खेत, विजिट, प्रभाव आकलन और फोटो एक PDF में।")
+                val assessments = data.impactsFor(reportFarmer.id)
+                val hasDraft = draftPreferences.contains("farmer-${reportFarmer.id}")
+                Text(if (assessments.isEmpty()) "अभी प्रभाव आकलन सहेजा नहीं गया। पूरा A–F फॉर्म भरने के लिए नीचे दबाएँ। अभी PDF में केवल उपलब्ध रिकॉर्ड आएँगे।" else "${assessments.size} आकलन सहेजे गए। नए बेसलाइन / फॉलो-अप डेटा के लिए पूरा फॉर्म खोलें।")
+                if (hasDraft) Text("अधूरा मसौदा मौजूद है। मसौदा जारी रखें और सहेजें; मसौदा अभी PDF में शामिल नहीं है।", color = Amber, fontSize = 13.sp)
+                Button({
+                    farmerId = reportFarmer.id; fieldId = 0; reportFarmerId = 0; edit("impact")
+                }, Modifier.fillMaxWidth().testTag("report-fill-impact"), enabled = !exportBusy) {
+                    Icon(Icons.Rounded.EditNote, null)
+                    Text(if (hasDraft) " मसौदा जारी रखें / Continue" else " पूरा डेटा भरें / Fill impact form")
+                }
                 if (exportBusy) LinearProgressIndicator(Modifier.fillMaxWidth())
-                Button({ export(reportFarmer, false) }, Modifier.fillMaxWidth(), enabled = !exportBusy) { Text("फोन में PDF सहेजें") }
+                OutlinedButton({ export(reportFarmer, false) }, Modifier.fillMaxWidth(), enabled = !exportBusy) { Text("फोन में PDF सहेजें") }
                 OutlinedButton({ export(reportFarmer, true) }, Modifier.fillMaxWidth(), enabled = !exportBusy) { Text("PDF साझा करें") }
                 OutlinedButton({ export(reportFarmer, false, true) }, Modifier.fillMaxWidth(), enabled = !exportBusy) { Text("प्रमाण फ़ोल्डर (.zip) सहेजें") }
             } },
@@ -217,7 +229,8 @@ fun CollectiveApp() {
             }
             "farmer" -> FarmerForm(data.farmers.find { it.id == editId }, { form = "" }) { value ->
                 val id = withContext(Dispatchers.IO) { repo.addFarmer(value) }
-                refresh(); farmerId = id; fieldId = 0; form = ""; notify("किसान इसी फोन पर सहेजा गया")
+                refresh(); farmerId = id; fieldId = 0; form = if (value.id == 0L) "impact" else ""
+                notify(if (value.id == 0L) "किसान सहेजा गया। अब रिपोर्ट के लिए प्रभाव आकलन भरें।" else "किसान इसी फोन पर सहेजा गया")
             }
             "field" -> if (farmer != null) FieldForm(farmer.id, data.fields.find { it.id == editId }, { form = "" }) { value ->
                 val id = withContext(Dispatchers.IO) { repo.addField(value) }
@@ -623,8 +636,8 @@ internal fun FormScreen(title: String, eyebrow: String, close: () -> Unit, busy:
 }
 
 @Composable internal fun FormSection(value: String) { Text(value.uppercase(), color = Forest, fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 1.4.sp, modifier = Modifier.padding(top = 7.dp)) }
-@Composable internal fun Input(label: String, value: String, change: (String) -> Unit, required: Boolean = false, lines: Int = 1, keyboard: KeyboardType = KeyboardType.Text) {
-    OutlinedTextField(value, change, Modifier.fillMaxWidth(), label = { Text(label + if (required) " *" else "") }, singleLine = lines == 1, minLines = lines, keyboardOptions = KeyboardOptions(keyboardType = keyboard), shape = RoundedCornerShape(14.dp))
+@Composable internal fun Input(label: String, value: String, change: (String) -> Unit, required: Boolean = false, lines: Int = 1, keyboard: KeyboardType = KeyboardType.Text, modifier: Modifier = Modifier) {
+    OutlinedTextField(value, change, modifier.fillMaxWidth(), label = { Text(label + if (required) " *" else "") }, singleLine = lines == 1, minLines = lines, keyboardOptions = KeyboardOptions(keyboardType = keyboard), shape = RoundedCornerShape(14.dp))
 }
 @Composable private fun Choice(label: String, values: List<String>, selected: String, change: (String) -> Unit) { Column(verticalArrangement = Arrangement.spacedBy(6.dp)) { Text(label, fontSize = 13.sp, color = Muted); ChipRow(values, selected, change) } }
 @Composable internal fun ErrorText(value: String) { Text(value, color = MaterialTheme.colorScheme.error, fontSize = 13.sp) }

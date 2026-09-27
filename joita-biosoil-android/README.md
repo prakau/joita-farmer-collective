@@ -5,7 +5,7 @@ Android-first, offline field-data collection for Joita agricultural programs. Th
 ## Product
 
 - Hindi-first farmer registration, field/visit forms, navigation and PDF reports.
-- A dedicated six-step Hindi impact assessment matching the supplied `JOITA_CCF_Farmer_Impact_Form_Hindi_FULLPAGE` form: FarmAssist, all eight Soil Saathi readings, BioSynth Nano, climate/CRM outcomes, farmer feedback/training, and photo/consent evidence.
+- A dedicated six-step Hindi impact assessment matching the supplied `JOITA_CCF_Farmer_Impact_Form_Hindi_FULLPAGE` form: A–F sections, tap-to-select single/multiple-choice responses, quick-fill examples for common entries, FarmAssist, all eight Soil Saathi readings, BioSynth Nano, climate/CRM outcomes, farmer feedback/training, and photo/consent evidence. Measurements and personal answers remain manual; quick choices never invent readings.
 - Per-farmer baseline, follow-up, final and correction assessments; saved assessments are append-only in the app. Draft answers save automatically on this phone. Unknown responses remain blank, and consent is never preselected.
 - Material 3 dashboard with farmer, acreage and lead-farmer totals.
 - Searchable farmer register and lead-farmer filter.
@@ -31,7 +31,7 @@ Use Android Studio with JDK 17 and Android SDK 36, or run here:
 
 The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`. The app uses the distinct package `ai.joita.farmercollective`, supports Android 6.0 (API 23) and newer, and can coexist with Soil Saathi. In Android Studio, open this directory, select `app`, then run on an emulator or USB-debuggable device.
 
-Signed release builds require the ignored JOITA keystore and `keystore.properties`, then use `./gradlew assembleRelease`. Preserve that private key: every future in-place Android update must be signed with the same key. Version 1.1.1 updates the same `ai.joita.farmercollective` installation and retains its local SQLite records.
+Signed release builds require the ignored JOITA keystore and `keystore.properties`, then use `./gradlew assembleRelease`. Preserve that private key: every future in-place Android update must be signed with the same key. Version 1.1.2 updates the same `ai.joita.farmercollective` installation and retains its local SQLite records.
 
 ## Data and storage
 
@@ -45,7 +45,7 @@ There is intentionally no pretend sync. Future cloud sync should add stable UUID
 
 Tap **किसान जोड़ें**, enter name/village/contact/tenure, add a farmer photo, and enter the registering officer. Ask the farmer before photographing them. Read back the profile and tick acknowledgement only after agreement. Editing a profile requires acknowledgement to be recorded again. This records the officer's statement; it is not an electronic signature or a contract.
 
-Open the farmer → **नया प्रभाव आकलन भरें**. Select baseline/follow-up/final/correction and complete sections A–F. Enter the assessment date and officer; all other unknown answers may remain blank. Validate pH 0–14, moisture 0–100%, finite numeric values and real dates; EC, salinity, N/P/K and material quantities require an explicit unit. Use actual measurements, not guessed readings. The app does not calculate CO₂e. Supplementary before/after pump-hour/input fields and comparison-period notes provide context, not automatic causal attribution.
+Open the farmer → **नया प्रभाव आकलन भरें**. Select baseline/follow-up/final/correction and move between A–F using the pinned section tabs and next/previous controls. Tap a response chip for single or multiple choice; tap-to-fill examples can be edited like any other answer. Enter the assessment date and officer; required project Farmer ID, Plot ID, project area and crop/stage keep the report tied to the assessed plot. Other unknown answers may remain blank. Validate pH 0–14, moisture 0–100%, finite numeric values and real dates; EC, salinity, N/P/K and material quantities require an explicit unit. Use actual measurements, not guessed readings. The app does not calculate CO₂e. Supplementary before/after pump-hour/input fields and comparison-period notes provide context, not automatic causal attribution.
 
 Registration references are local to a phone. Use an agreed project-wide Farmer ID and Plot ID in each assessment when collecting across phones. The app snapshots profile/field references into the assessment; later profile edits do not silently rewrite old assessments. Saved assessments have no edit/delete UI: append a correction naming the older assessment ID. This is an application workflow, not tamper-proof storage.
 

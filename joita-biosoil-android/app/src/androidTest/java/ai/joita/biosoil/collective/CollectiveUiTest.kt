@@ -33,9 +33,11 @@ class CollectiveUiTest {
         compose.onNodeWithText("परियोजना किसान ID", substring = true).performScrollTo().performTextInput("CCF-QA-1")
         compose.onNodeWithText("FarmTrace / खेत / Plot ID", substring = true).performScrollTo().performTextInput("P-QA-1")
         compose.onNodeWithText("परियोजना क्षेत्र (एकड़)", substring = true).performScrollTo().performTextInput("1.5")
-        compose.onNodeWithText("फसल / अवस्था", substring = true).performScrollTo().performTextInput("गेहूँ / बढ़वार")
+        compose.onNodeWithText("फसल / अवस्था", substring = true).performScrollTo()
+        compose.onNodeWithTag("impact-quick-cropStage-1").performScrollTo().performClick()
+        compose.onNodeWithTag("impact-input-cropStage").assertTextContains("गेहूँ / बढ़वार")
         capture("impact-screen.png")
-        compose.onNodeWithText("सहेजें").performClick()
+        compose.onNodeWithTag("impact-save").performClick()
         compose.waitUntil(10000) { compose.onAllNodesWithText("सहेजें").fetchSemanticsNodes().isEmpty() }
         val appContext = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
         CollectiveRepository(appContext).use { repo ->

@@ -25,6 +25,7 @@ class CollectiveUiTest {
         compose.onNodeWithTag("add-impact").performScrollTo().performClick()
         compose.onNodeWithText("फील्ड कर्मी का नाम *").performScrollTo().performTextInput("QA Officer")
         compose.onNodeWithTag("impact-stage-बेसलाइन").performScrollTo().performClick()
+        compose.onNodeWithTag("impact-stage-बेसलाइन").assertIsSelected()
         // Leaving and reopening restores the automatically saved draft.
         compose.onNodeWithContentDescription("बंद करें").performClick()
         compose.onNodeWithTag("add-impact").performClick()

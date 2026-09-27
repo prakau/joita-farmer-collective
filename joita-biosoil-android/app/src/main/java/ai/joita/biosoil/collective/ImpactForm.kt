@@ -41,7 +41,9 @@ internal fun ImpactForm(farmer: Farmer, fields: List<FarmField>, close: () -> Un
             if (fields.size == 1) { put("projectAcres", fields[0].acreage.toString()); put("cropStage", fields[0].crop) }
         }.toString()
     }
-    var raw by rememberSaveable(farmer.id) { mutableStateOf(initial) }
+    // Every reopen reads the newest SharedPreferences draft. The form can be
+    // dismissed and reopened without a stale rememberSaveable snapshot winning.
+    var raw by remember(farmer.id) { mutableStateOf(initial) }
     var page by rememberSaveable(farmer.id) { mutableIntStateOf(0) }
     var consent by rememberSaveable(farmer.id) { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }

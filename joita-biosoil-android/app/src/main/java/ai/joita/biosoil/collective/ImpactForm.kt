@@ -121,6 +121,10 @@ internal fun ImpactForm(farmer: Farmer, fields: List<FarmField>, close: () -> Un
                                     Text("इस किसान का खेत अभी दर्ज नहीं है। रिपोर्ट के लिए Farmer ID, Plot ID, क्षेत्र और फसल भरें; अगली बार खेत प्रोफाइल जोड़ें।", Modifier.padding(12.dp), color = Color(0xFF694619), fontSize = 12.sp)
                                 }
                                 if (page == 0) {
+                                    val stage = ImpactSchema.sections.first().questions.first { it.key == "stage" }
+                                    ImpactOptions(stage, value("stage")) { change("stage", it) }
+                                }
+                                if (page == 0) {
                                     DateInput("आकलन तिथि", value("assessmentDate")) { change("assessmentDate", it) }
                                     Input("फील्ड कर्मी का नाम", value("officer"), { change("officer", it) }, required = true)
                                     Text("किसान और खेत की पहचान जाँचें। Farmer ID / Plot ID परियोजना की साझा ID होनी चाहिए—फोन का स्थानीय क्रमांक नहीं। एक से अधिक खेत हों तो इसी आकलन वाले खेत का Plot ID और क्षेत्र भरें।", fontSize = 12.sp, color = Muted)
@@ -128,40 +132,13 @@ internal fun ImpactForm(farmer: Farmer, fields: List<FarmField>, close: () -> Un
                                 if (page == 2) Text("Soil Saathi की वास्तविक यंत्र / लैब रीडिंग ही भरें। इकाई स्रोत से देखकर लिखें; अनुमानित मान न डालें।", color = Muted, fontSize = 13.sp)
                                 if (page == 4) Text("किसान का बताया प्रभाव और मापा गया प्रभाव अलग रखें। तुलना का आधार लिखें; CO₂e की गणना बाद में JOITA करेगा।", color = Muted, fontSize = 13.sp)
                                 if (error.isNotBlank()) ErrorText(error)
-                                ImpactSchema.sections[page].questions.forEach { question ->
+                                ImpactSchema.sections[page].questions.filterNot { page == 0 && it.key == "stage" }.forEach { question ->
                                     key(question.key) {
                                         val answer = value(question.key)
                                         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                             when (question.kind) {
                                                 "choice", "multi" -> {
-                                                    Text(question.label + if (question.key == "stage") " *" else "", fontWeight = FontWeight.Medium, fontSize = 14.sp)
-                                                    Text(if (question.kind == "multi") "लागू सभी विकल्प चुनें" else "एक विकल्प चुनें", color = Muted, fontSize = 11.sp)
-                                                    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                                                        question.options.chunked(2).forEach { rowOptions ->
-                                                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                                                rowOptions.forEach { option ->
-                                                                    val selected = if (question.kind == "multi") option in answer.split(" | ") else answer == option
-                                                                    FilterChip(
-                                                                        selected = selected,
-                                                                        onClick = {
-                                                                            val next = if (question.kind == "multi") {
-                                                                                val entries = answer.split(" | ").filter { it.isNotBlank() }.toMutableSet()
-                                                                                val unknown = setOf("अभी स्पष्ट नहीं", "कोई बदलाव स्पष्ट नहीं", "पता नहीं")
-                                                                                if (selected) entries.remove(option) else {
-                                                                                    if (option in unknown) entries.clear() else entries.removeAll(unknown)
-                                                                                    entries.add(option)
-                                                                                }
-                                                                                entries.joinToString(" | ")
-                                                                            } else if (selected) "" else option
-                                                                            change(question.key, next)
-                                                                        },
-                                                                        label = { Text(option, fontSize = 12.sp) },
-                                                                        modifier = Modifier.testTag("impact-${question.key}-$option")
-                                                                    )
-                                                                }
-                                                            }
-                                                        }
-                                                    }
+                                                    ImpactOptions(question, answer, { change(question.key, it) })
                                                 }
                                                 "date" -> DateInput(question.label, answer) { change(question.key, it) }
                                                 else -> {
@@ -198,6 +175,40 @@ internal fun ImpactForm(farmer: Farmer, fields: List<FarmField>, close: () -> Un
                                 Text("जवाब कभी भी बदलें—ऊपर के सेक्शन चुनें। ‘सहेजें’ इस आकलन को इस फोन के इतिहास में जोड़ता है।", color = Muted, fontSize = 12.sp)
                             }
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ImpactOptions(question: ImpactQuestion, answer: String, change: (String) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(question.label + if (question.key == "stage") " *" else "", fontWeight = FontWeight.Medium, fontSize = 14.sp)
+        Text(if (question.kind == "multi") "लागू सभी विकल्प चुनें" else "एक विकल्प चुनें", color = Muted, fontSize = 11.sp)
+        Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            question.options.chunked(2).forEach { rowOptions ->
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    rowOptions.forEach { option ->
+                        val selected = if (question.kind == "multi") option in answer.split(" | ") else answer == option
+                        FilterChip(
+                            selected = selected,
+                            onClick = {
+                                val next = if (question.kind == "multi") {
+                                    val entries = answer.split(" | ").filter { it.isNotBlank() }.toMutableSet()
+                                    val unknown = setOf("अभी स्पष्ट नहीं", "कोई बदलाव स्पष्ट नहीं", "पता नहीं")
+                                    if (selected) entries.remove(option) else {
+                                        if (option in unknown) entries.clear() else entries.removeAll(unknown)
+                                        entries.add(option)
+                                    }
+                                    entries.joinToString(" | ")
+                                } else if (selected) "" else option
+                                change(next)
+                            },
+                            label = { Text(option, fontSize = 12.sp) },
+                            modifier = Modifier.testTag("impact-${question.key}-$option")
+                        )
                     }
                 }
             }

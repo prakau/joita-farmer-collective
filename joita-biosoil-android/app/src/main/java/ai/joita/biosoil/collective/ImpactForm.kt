@@ -1,9 +1,8 @@
 package ai.joita.biosoil.collective
 
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -80,8 +79,8 @@ internal fun ImpactForm(farmer: Farmer, fields: List<FarmField>, close: () -> Un
         }
     }
 
-    val scroll = rememberLazyListState()
-    LaunchedEffect(page) { scroll.scrollToItem(0) }
+    val scroll = rememberScrollState()
+    LaunchedEffect(page) { scroll.scrollTo(0) }
     Dialog(onDismissRequest = { if (!busy && photoBusy.isEmpty()) close() }, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = true)) {
         Surface(Modifier.fillMaxSize(), color = Paper) {
             Scaffold(
@@ -112,9 +111,7 @@ internal fun ImpactForm(farmer: Farmer, fields: List<FarmField>, close: () -> Un
                         }
                         LinearProgressIndicator(progress = { (page + 1) / 6f }, modifier = Modifier.fillMaxWidth())
                     }
-                    LazyColumn(Modifier.fillMaxSize().imePadding(), state = scroll, contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                        item {
-                            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Column(Modifier.fillMaxSize().imePadding().verticalScroll(scroll).padding(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                                 Text("${ImpactSchema.sections[page].title}  •  ${page + 1}/6", color = Forest, fontSize = 19.sp, fontWeight = FontWeight.Bold)
                                 Text("मसौदा इसी फोन पर अपने-आप सहेजता है। उत्तर न मालूम हो तो खाली छोड़ें—अनुमान न लगाएँ।", color = Muted, fontSize = 13.sp)
                                 if (fields.isEmpty() && page == 0) Surface(color = Color(0xFFFFF1D6), shape = RoundedCornerShape(14.dp)) {
@@ -173,8 +170,6 @@ internal fun ImpactForm(farmer: Farmer, fields: List<FarmField>, close: () -> Un
                                     if (!consent) Text("सहमति दर्ज नहीं: रिकॉर्ड में यही लिखा जाएगा। साझा करने से पहले अनुमति सुनिश्चित करें।", color = Amber, fontSize = 12.sp)
                                 }
                                 Text("जवाब कभी भी बदलें—ऊपर के सेक्शन चुनें। ‘सहेजें’ इस आकलन को इस फोन के इतिहास में जोड़ता है।", color = Muted, fontSize = 12.sp)
-                            }
-                        }
                     }
                 }
             }
